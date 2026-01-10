@@ -1,0 +1,229 @@
+/**
+ * Tooltips d'Aide Contextuelle
+ * Version 2.16.0 - Sprint 6
+ */
+
+/* Icône d'aide */
+.colis224-help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #e0e7ff;
+    color: #6366f1;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: help;
+    margin-left: 6px;
+    transition: all 0.2s ease;
+    position: relative;
+    vertical-align: middle;
+}
+
+.colis224-help-icon:hover {
+    background: #6366f1;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Container du tooltip */
+.colis224-tooltip {
+    position: absolute;
+    z-index: 999999;
+    background: #1f2937;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    max-width: 300px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform: translateY(5px);
+}
+
+.colis224-tooltip.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Flèche du tooltip */
+.colis224-tooltip::before {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-style: solid;
+}
+
+/* Tooltip en haut */
+.colis224-tooltip.top::before {
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px 6px 0 6px;
+    border-color: #1f2937 transparent transparent transparent;
+}
+
+/* Tooltip en bas */
+.colis224-tooltip.bottom::before {
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 0 6px 6px 6px;
+    border-color: transparent transparent #1f2937 transparent;
+}
+
+/* Tooltip à gauche */
+.colis224-tooltip.left::before {
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 6px 0 6px 6px;
+    border-color: transparent transparent transparent #1f2937;
+}
+
+/* Tooltip à droite */
+.colis224-tooltip.right::before {
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 6px 6px 6px 0;
+    border-color: transparent #1f2937 transparent transparent;
+}
+
+/* Titre dans le tooltip */
+.colis224-tooltip-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+/* Lien dans le tooltip */
+.colis224-tooltip a {
+    color: #93c5fd;
+    text-decoration: underline;
+}
+
+.colis224-tooltip a:hover {
+    color: #60a5fa;
+}
+
+/* Tooltip avec icône */
+.colis224-tooltip-with-icon {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.colis224-tooltip-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 12px;
+}
+
+.colis224-tooltip-content {
+    flex: 1;
+}
+
+/* Variations de couleurs */
+.colis224-tooltip.success {
+    background: #10b981;
+}
+
+.colis224-tooltip.success::before {
+    border-color: #10b981 transparent transparent transparent;
+}
+
+.colis224-tooltip.success.bottom::before {
+    border-color: transparent transparent #10b981 transparent;
+}
+
+.colis224-tooltip.success.left::before {
+    border-color: transparent transparent transparent #10b981;
+}
+
+.colis224-tooltip.success.right::before {
+    border-color: transparent #10b981 transparent transparent;
+}
+
+.colis224-tooltip.warning {
+    background: #f59e0b;
+}
+
+.colis224-tooltip.warning::before {
+    border-color: #f59e0b transparent transparent transparent;
+}
+
+.colis224-tooltip.warning.bottom::before {
+    border-color: transparent transparent #f59e0b transparent;
+}
+
+.colis224-tooltip.warning.left::before {
+    border-color: transparent transparent transparent #f59e0b;
+}
+
+.colis224-tooltip.warning.right::before {
+    border-color: transparent #f59e0b transparent transparent;
+}
+
+.colis224-tooltip.error {
+    background: #ef4444;
+}
+
+.colis224-tooltip.error::before {
+    border-color: #ef4444 transparent transparent transparent;
+}
+
+.colis224-tooltip.error.bottom::before {
+    border-color: transparent transparent #ef4444 transparent;
+}
+
+.colis224-tooltip.error.left::before {
+    border-color: transparent transparent transparent #ef4444;
+}
+
+.colis224-tooltip.error.right::before {
+    border-color: transparent #ef4444 transparent transparent;
+}
+
+/* Badge d'aide dans les labels */
+label .colis224-help-icon,
+th .colis224-help-icon,
+h2 .colis224-help-icon,
+h3 .colis224-help-icon {
+    vertical-align: baseline;
+}
+
+/* Animation de pulse pour attirer l'attention */
+.colis224-help-icon.pulse {
+    animation: helpPulse 2s infinite;
+}
+
+@keyframes helpPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(99, 102, 241, 0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .colis224-tooltip {
+        max-width: 250px;
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+}

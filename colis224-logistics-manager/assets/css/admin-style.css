@@ -1,0 +1,684 @@
+/**
+ * Colis224 Logistics Manager - Styles Admin
+ */
+
+/* === CONTENEUR PRINCIPAL === */
+.colis224-wrap {
+    margin: 20px 20px 20px 0;
+}
+
+.colis224-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: 23px;
+}
+
+.colis224-title .dashicons {
+    color: #2271b1;
+    font-size: 28px;
+}
+
+/* === CARTES === */
+.colis224-card {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+.colis224-card h3 {
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #1d2327;
+}
+
+.colis224-card h3 .dashicons {
+    color: #2271b1;
+}
+
+/* === CARTES COLORÉES === */
+.colis224-card-blue {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+}
+
+.colis224-card-green {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: #fff;
+    border: none;
+}
+
+.colis224-card-orange {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: #fff;
+    border: none;
+}
+
+.colis224-card-purple {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: #fff;
+    border: none;
+}
+
+.colis224-card-red {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: #fff;
+    border: none;
+}
+
+.colis224-card-light {
+    background: #f8f9fa;
+    border: 1px solid #e1e4e8;
+}
+
+.colis224-card-blue h3,
+.colis224-card-blue h4,
+.colis224-card-green h3,
+.colis224-card-green h4,
+.colis224-card-orange h3,
+.colis224-card-orange h4,
+.colis224-card-purple h3,
+.colis224-card-purple h4,
+.colis224-card-red h3,
+.colis224-card-red h4 {
+    color: #fff;
+}
+
+.colis224-card-icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+    opacity: 0.9;
+}
+
+.colis224-card-content h3,
+.colis224-card-content h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.colis224-stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.colis224-stat-label {
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+.colis224-big-number {
+    font-size: 36px;
+    font-weight: bold;
+    margin: 10px 0;
+    text-align: center;
+}
+
+/* === GRILLES === */
+.colis224-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.colis224-grid-3 {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.colis224-grid-4 {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.colis224-dashboard-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.colis224-half-width {
+    flex: 1;
+}
+
+.colis224-third-width {
+    flex: 1;
+    min-width: 280px;
+}
+
+.colis224-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* === TABLEAUX === */
+.colis224-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.colis224-table thead {
+    background-color: #f6f7f7;
+}
+
+.colis224-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #1d2327;
+    border-bottom: 2px solid #c3c4c7;
+}
+
+.colis224-table td {
+    padding: 12px;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.colis224-table tbody tr:hover {
+    background-color: #f6f7f7;
+}
+
+.colis224-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.colis224-details-table {
+    width: 100%;
+}
+
+.colis224-details-table th {
+    text-align: left;
+    padding: 10px 15px 10px 0;
+    font-weight: 600;
+    color: #50575e;
+    width: 40%;
+}
+
+.colis224-details-table td {
+    padding: 10px 0;
+}
+
+/* === FORMULAIRES === */
+.colis224-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.colis224-form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.colis224-form-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #1d2327;
+}
+
+.colis224-form-group input[type="text"],
+.colis224-form-group input[type="email"],
+.colis224-form-group input[type="tel"],
+.colis224-form-group input[type="url"],
+.colis224-form-group input[type="number"],
+.colis224-form-group input[type="date"],
+.colis224-form-group select,
+.colis224-form-group textarea {
+    padding: 8px 12px;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.colis224-form-group input[type="text"]:focus,
+.colis224-form-group input[type="email"]:focus,
+.colis224-form-group input[type="number"]:focus,
+.colis224-form-group input[type="date"]:focus,
+.colis224-form-group select:focus,
+.colis224-form-group textarea:focus {
+    border-color: #2271b1;
+    outline: none;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+.colis224-form-group small {
+    color: #646970;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.colis224-full-width {
+    grid-column: 1 / -1;
+}
+
+.colis224-form-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #dcdcde;
+    display: flex;
+    gap: 10px;
+}
+
+.colis224-inline-form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.colis224-inline-form input,
+.colis224-inline-form select {
+    flex: 1;
+    min-width: 150px;
+}
+
+/* === BADGES === */
+.colis224-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    background-color: #f0f0f1;
+    color: #1d2327;
+}
+
+.colis224-badge-en-attente {
+    background-color: #f0f0f1;
+    color: #3c434a;
+}
+
+.colis224-badge-expedie {
+    background-color: #c5e7ff;
+    color: #0a4b78;
+}
+
+.colis224-badge-en-transit {
+    background-color: #fef7e0;
+    color: #8a6116;
+}
+
+.colis224-badge-livre {
+    background-color: #d4f4dd;
+    color: #0f5323;
+}
+
+.colis224-badge-retour {
+    background-color: #ffd8d8;
+    color: #8b1a1a;
+}
+
+.colis224-badge-payment-paye {
+    background-color: #d4f4dd;
+    color: #0f5323;
+}
+
+.colis224-badge-payment-partiel {
+    background-color: #fef7e0;
+    color: #8a6116;
+}
+
+.colis224-badge-payment-non-paye {
+    background-color: #ffd8d8;
+    color: #8b1a1a;
+}
+
+.colis224-badge-green {
+    background-color: #d4f4dd;
+    color: #0f5323;
+}
+
+.colis224-badge-gray {
+    background-color: #f0f0f1;
+    color: #50575e;
+}
+
+.colis224-badge-blue {
+    background-color: #c5e7ff;
+    color: #0a4b78;
+}
+
+/* === FILTRES === */
+.colis224-filters {
+    background: #fff;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.colis224-search-input {
+    min-width: 250px;
+    padding: 6px 10px;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+}
+
+/* === ACTIONS === */
+.colis224-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.colis224-actions .button {
+    margin: 0;
+}
+
+/* === UTILITAIRES === */
+.text-red {
+    color: #d63638;
+}
+
+.text-green {
+    color: #00a32a;
+}
+
+/* === ONGLETS === */
+.nav-tab-wrapper {
+    margin-bottom: 20px;
+}
+
+/* === RESPONSIVE === */
+@media screen and (max-width: 782px) {
+    .colis224-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .colis224-dashboard-row {
+        grid-template-columns: 1fr;
+    }
+
+    .colis224-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .colis224-table {
+        font-size: 13px;
+    }
+
+    .colis224-table th,
+    .colis224-table td {
+        padding: 8px;
+    }
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.colis224-card {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* === ESPACEMENT DES ICÔNES === */
+/* S'assurer que toutes les icônes dashicons ont un espacement correct */
+.button .dashicons,
+.button-primary .dashicons,
+.button-secondary .dashicons,
+a .dashicons {
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+/* Icônes dans les cartes et titres */
+h1 .dashicons,
+h2 .dashicons,
+h3 .dashicons,
+h4 .dashicons,
+h5 .dashicons,
+h6 .dashicons {
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+/* Icônes après le texte */
+.dashicons + span,
+span + .dashicons {
+    margin-left: 5px;
+}
+
+/* Correction pour les badges et statuts */
+.colis224-badge .dashicons {
+    margin-right: 3px;
+}
+
+/* Corrections supplémentaires pour formulaires et labels */
+.colis224-form-group label .dashicons,
+label .dashicons,
+.colis224-inline-form .dashicons {
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+/* Correction pour les spans contenant des dashicons */
+span.dashicons {
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+/* Tous les dashicons qui précèdent du texte */
+.dashicons:not(:last-child) {
+    margin-right: 6px;
+}
+
+/* Correction spécifique pour liens retour et boutons avec icônes */
+a[href*="page=colis224"] .dashicons,
+.button[onclick] .dashicons,
+.colis224-actions a .dashicons,
+.colis224-form-actions a .dashicons {
+    margin-right: 6px !important;
+    vertical-align: middle;
+}
+
+/* Correction pour les boutons nouveau/ajouter */
+.button-primary .dashicons-plus-alt,
+.button .dashicons-plus,
+.button .dashicons-arrow-left-alt2,
+.button .dashicons-edit {
+    margin-right: 6px !important;
+}
+
+/* S'assurer que les icônes dans les liens ne sont pas collées */
+a.button .dashicons:first-child {
+    margin-right: 6px !important;
+}
+
+/* === CORRECTIONS ULTRA-SPÉCIFIQUES ESPACEMENT ICÔNES === */
+
+/* Force l'espacement pour TOUS les liens et boutons dans le wrap */
+.wrap a .dashicons,
+.wrap .button .dashicons,
+.wrap button .dashicons {
+    margin-right: 6px !important;
+}
+
+/* Tous les dashicons dans la zone admin Colis224 */
+.colis224-wrap .dashicons {
+    margin-right: 6px !important;
+}
+
+/* Liens de retour et navigation */
+.wrap a[href*="page=colis224"] .dashicons-arrow-left-alt2,
+.wrap a[href] .dashicons-arrow-left-alt2 {
+    margin-right: 6px !important;
+}
+
+/* Boutons nouveau/ajouter avec icône + */
+.wrap .button-primary .dashicons-plus-alt,
+.wrap .button .dashicons-plus,
+a .dashicons-plus-alt {
+    margin-right: 6px !important;
+}
+
+/* Boutons modifier avec icône crayon */
+.wrap .button .dashicons-edit,
+a .dashicons-edit {
+    margin-right: 6px !important;
+}
+
+/* Correction pour les actions dans les tableaux */
+.colis224-table .colis224-actions .dashicons,
+.colis224-actions .button .dashicons {
+    margin-right: 5px !important;
+}
+
+/* S'assurer qu'aucun dashicon n'est collé au texte */
+.dashicons::after {
+    content: '';
+    display: inline-block;
+    width: 6px;
+}
+
+/* === BOUTONS AVEC ICÔNES UNIQUEMENT === */
+/* Boutons contenant uniquement une icône dashicon (sans texte) */
+.button .dashicons:only-child,
+.button-small .dashicons:only-child {
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+}
+
+/* Améliorer l'apparence des boutons icon-only */
+.button-small {
+    min-width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px !important;
+}
+
+.button-small .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin: 0 !important;
+}
+
+/* Boutons d'actions dans les tableaux */
+.colis224-actions {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.colis224-actions .button-small {
+    margin: 0 !important;
+    transition: all 0.2s ease;
+}
+
+.colis224-actions .button-small:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Couleurs spécifiques pour les boutons d'action */
+.colis224-actions .button-small[title*="Voir"],
+.colis224-actions .button-small[href*="view"] {
+    background: #e3f2fd;
+    border-color: #2196f3;
+    color: #1976d2;
+}
+
+.colis224-actions .button-small[title*="Voir"]:hover,
+.colis224-actions .button-small[href*="view"]:hover {
+    background: #2196f3;
+    color: white;
+}
+
+.colis224-actions .button-small[title*="Modifier"],
+.colis224-actions .button-small[href*="edit"] {
+    background: #fff3e0;
+    border-color: #ff9800;
+    color: #f57c00;
+}
+
+.colis224-actions .button-small[title*="Modifier"]:hover,
+.colis224-actions .button-small[href*="edit"]:hover {
+    background: #ff9800;
+    color: white;
+}
+
+.colis224-actions .button-link-delete,
+.colis224-actions .button-small[href*="delete"] {
+    background: #ffebee;
+    border-color: #f44336;
+    color: #c62828;
+}
+
+.colis224-actions .button-link-delete:hover,
+.colis224-actions .button-small[href*="delete"]:hover {
+    background: #f44336;
+    color: white;
+}
+
+/* Boutons page-title-action (header) */
+.page-title-action {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px !important;
+}
+
+.page-title-action .dashicons {
+    margin-right: 0 !important;
+}
+
+/* === AMÉLIORATION DES BOUTONS AVEC TEXTE === */
+/* S'assurer que tous les boutons avec dashicons + texte sont bien espacés */
+.button .dashicons + * {
+    margin-left: 0 !important;
+}
+
+/* Boutons dans les formulaires */
+.colis224-form-actions .button,
+.colis224-form-actions .button-large,
+.colis224-form-actions .button-primary {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Style amélioré pour les boutons avec texte dans les actions */
+.colis224-actions .button-small {
+    white-space: nowrap;
+}
+
+/* Responsive: Cacher le texte sur mobile pour les boutons d'action */
+@media screen and (max-width: 782px) {
+    .colis224-actions .button-small {
+        padding: 0 6px !important;
+    }
+    
+    /* Option: Cacher le texte sur mobile et garder juste l'icône */
+    /* Décommenter si nécessaire 
+    .colis224-actions .button-small .button-text {
+        display: none;
+    }
+    */
+}
