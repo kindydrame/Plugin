@@ -102,16 +102,17 @@ class Colis224_Client_Auth {
             'token' => $token
         )));
 
-        // Cookie valide 2 heures
-        $cookie_set = setcookie(
-            $cookie_name,
-            $cookie_value,
-            time() + (2 * HOUR_IN_SECONDS),
-            COOKIEPATH,
-            COOKIE_DOMAIN,
-            is_ssl(), // Secure si HTTPS
-            true // HttpOnly pour sécurité
+        // Cookie valide 2 heures avec options modernes (PHP 7.3+)
+        $cookie_options = array(
+            'expires' => time() + (2 * HOUR_IN_SECONDS),
+            'path' => COOKIEPATH,
+            'domain' => COOKIE_DOMAIN,
+            'secure' => is_ssl(), // Secure si HTTPS
+            'httponly' => true,   // HttpOnly pour sécurité XSS
+            'samesite' => 'Lax'   // Requis pour les navigateurs modernes
         );
+
+        $cookie_set = setcookie($cookie_name, $cookie_value, $cookie_options);
 
         // DEBUG temporaire
         if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -155,17 +156,17 @@ class Colis224_Client_Auth {
             delete_transient('colis224_client_token_' . $client_id);
         }
 
-        // Supprimer le cookie
+        // Supprimer le cookie avec les mêmes options que lors de sa création
         if (isset($_COOKIE['colis224_client_auth'])) {
-            setcookie(
-                'colis224_client_auth',
-                '',
-                time() - 3600,
-                COOKIEPATH,
-                COOKIE_DOMAIN,
-                is_ssl(),
-                true
+            $cookie_options = array(
+                'expires' => time() - 3600,
+                'path' => COOKIEPATH,
+                'domain' => COOKIE_DOMAIN,
+                'secure' => is_ssl(),
+                'httponly' => true,
+                'samesite' => 'Lax'
             );
+            setcookie('colis224_client_auth', '', $cookie_options);
             unset($_COOKIE['colis224_client_auth']);
         }
     }
@@ -198,17 +199,17 @@ class Colis224_Client_Auth {
             delete_transient('colis224_client_token_' . $client_id);
         }
 
-        // Supprimer le cookie
+        // Supprimer le cookie avec les mêmes options que lors de sa création
         if (isset($_COOKIE['colis224_client_auth'])) {
-            setcookie(
-                'colis224_client_auth',
-                '',
-                time() - 3600,
-                COOKIEPATH,
-                COOKIE_DOMAIN,
-                is_ssl(),
-                true
+            $cookie_options = array(
+                'expires' => time() - 3600,
+                'path' => COOKIEPATH,
+                'domain' => COOKIE_DOMAIN,
+                'secure' => is_ssl(),
+                'httponly' => true,
+                'samesite' => 'Lax'
             );
+            setcookie('colis224_client_auth', '', $cookie_options);
             unset($_COOKIE['colis224_client_auth']);
         }
     }

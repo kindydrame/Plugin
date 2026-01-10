@@ -439,6 +439,13 @@ class Colis224_Frontend_Portal {
         // Nettoyer toute sortie parasite
         ob_start();
 
+        // Empêcher la mise en cache de la réponse AJAX
+        if (!headers_sent()) {
+            header('Cache-Control: no-cache, no-store, must-revalidate');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+        }
+
         // Vérifier le nonce avec gestion d'erreur
         if (!check_ajax_referer('colis224_frontend_nonce', 'nonce', false)) {
             ob_end_clean();

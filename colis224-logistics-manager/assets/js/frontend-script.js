@@ -99,6 +99,7 @@
                 url: colis224Frontend.ajaxurl,
                 type: 'POST',
                 dataType: 'json',
+                cache: false,  // Désactiver le cache pour éviter les problèmes avec WP Rocket
                 data: {
                     action: 'colis224_client_login',
                     nonce: colis224Frontend.nonce,
@@ -116,11 +117,17 @@
                             '</div>'
                         );
 
-                        // Redirection immédiate avec reload forcé
+                        // Redirection avec URL complète et cache-busting pour forcer le rechargement
                         setTimeout(function() {
-                            // Forcer le rechargement complet de la page pour charger la session
-                            window.location.reload(true);
-                        }, 800);
+                            // Utiliser window.location.href avec un paramètre pour forcer le rechargement
+                            var currentUrl = window.location.href;
+                            // Retirer l'ancien paramètre _t s'il existe
+                            currentUrl = currentUrl.replace(/[?&]_t=\d+/, '');
+                            // Ajouter le séparateur approprié
+                            var separator = currentUrl.indexOf('?') !== -1 ? '&' : '?';
+                            // Rediriger avec timestamp pour éviter le cache
+                            window.location.href = currentUrl + separator + '_t=' + new Date().getTime();
+                        }, 1000);
                     } else {
                         // Afficher le message d'erreur
                         $message.html(
