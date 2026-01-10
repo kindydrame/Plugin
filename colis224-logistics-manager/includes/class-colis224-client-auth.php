@@ -103,7 +103,7 @@ class Colis224_Client_Auth {
         )));
 
         // Cookie valide 2 heures
-        setcookie(
+        $cookie_set = setcookie(
             $cookie_name,
             $cookie_value,
             time() + (2 * HOUR_IN_SECONDS),
@@ -112,6 +112,16 @@ class Colis224_Client_Auth {
             is_ssl(), // Secure si HTTPS
             true // HttpOnly pour sécurité
         );
+
+        // DEBUG temporaire
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Colis224 LOGIN: Client ID ' . $client->id);
+            error_log('Colis224 LOGIN: Session ID = ' . session_id());
+            error_log('Colis224 LOGIN: Cookie défini = ' . ($cookie_set ? 'OUI' : 'NON'));
+            error_log('Colis224 LOGIN: Token transient stocké pour 2h');
+            error_log('Colis224 LOGIN: COOKIEPATH = ' . COOKIEPATH);
+            error_log('Colis224 LOGIN: COOKIE_DOMAIN = ' . COOKIE_DOMAIN);
+        }
 
         // Mettre à jour la dernière connexion du client
         $wpdb->update(
@@ -209,8 +219,17 @@ class Colis224_Client_Auth {
      * @return bool
      */
     public static function is_client_logged_in() {
+        // S'assurer que la session est démarrée
+        if (!session_id() && !headers_sent()) {
+            session_start();
+        }
+
         // D'abord vérifier la session
         if (isset($_SESSION['colis224_client_id']) && !empty($_SESSION['colis224_client_id'])) {
+            // DEBUG temporaire
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Colis224: Client connecté via SESSION - ID: ' . $_SESSION['colis224_client_id']);
+            }
             return true;
         }
 
@@ -222,13 +241,27 @@ class Colis224_Client_Auth {
                 $client_id = intval($cookie_data['client_id']);
                 $token = $cookie_data['token'];
 
+                // DEBUG temporaire
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('Colis224: Tentative restauration depuis COOKIE - Client ID: ' . $client_id);
+                }
+
                 // Vérifier que le token est valide dans le transient
                 $stored_token = get_transient('colis224_client_token_' . $client_id);
 
                 if ($stored_token && $stored_token === $token) {
+                    // DEBUG temporaire
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log('Colis224: Token valide, restauration session...');
+                    }
                     // Token valide, restaurer la session
                     self::restore_session_from_cookie($client_id);
                     return true;
+                } else {
+                    // DEBUG temporaire
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log('Colis224: Token invalide ou expiré');
+                    }
                 }
             }
 
@@ -242,6 +275,11 @@ class Colis224_Client_Auth {
                 is_ssl(),
                 true
             );
+        }
+
+        // DEBUG temporaire
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Colis224: Client NON connecté - Ni session ni cookie valide');
         }
 
         return false;

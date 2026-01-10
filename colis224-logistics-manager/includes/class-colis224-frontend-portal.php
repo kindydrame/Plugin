@@ -224,6 +224,11 @@ class Colis224_Frontend_Portal {
     public function client_portal_shortcode($atts) {
         ob_start();
 
+        // S'assurer que la session est démarrée
+        if (!session_id() && !headers_sent()) {
+            session_start();
+        }
+
         // Afficher un message de déconnexion si présent ET si l'utilisateur n'est PAS connecté
         if (isset($_GET['logout']) && $_GET['logout'] === 'success' && !Colis224_Client_Auth::is_client_logged_in()) {
             echo '<div class="colis224-notice colis224-notice-success">
@@ -232,7 +237,9 @@ class Colis224_Frontend_Portal {
         }
 
         // Vérifier si le client est connecté
-        if (!Colis224_Client_Auth::is_client_logged_in()) {
+        $is_logged_in = Colis224_Client_Auth::is_client_logged_in();
+
+        if (!$is_logged_in) {
             $this->display_login_form();
         } else {
             // Vérifier si la session n'est pas expirée

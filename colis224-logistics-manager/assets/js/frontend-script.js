@@ -116,11 +116,11 @@
                             '</div>'
                         );
 
-                        // Redirection après 1 seconde
+                        // Redirection immédiate avec reload forcé
                         setTimeout(function() {
-                            var targetUrl = response.data.redirect_url || window.location.href;
-                            window.location.href = targetUrl;
-                        }, 1000);
+                            // Forcer le rechargement complet de la page pour charger la session
+                            window.location.reload(true);
+                        }, 800);
                     } else {
                         // Afficher le message d'erreur
                         $message.html(
