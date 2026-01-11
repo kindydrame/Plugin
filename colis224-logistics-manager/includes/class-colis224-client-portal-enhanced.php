@@ -18,7 +18,8 @@ class Colis224_Client_Portal_Enhanced {
         // AJAX pour les tickets côté client
         add_action('wp_ajax_colis224_client_create_ticket', array($this, 'ajax_create_ticket'));
         add_action('wp_ajax_nopriv_colis224_client_create_ticket', array($this, 'ajax_create_ticket'));
-        
+
+        // AJAX pour récupérer les tickets
         add_action('wp_ajax_colis224_client_get_tickets', array($this, 'ajax_get_tickets'));
         add_action('wp_ajax_nopriv_colis224_client_get_tickets', array($this, 'ajax_get_tickets'));
         
@@ -60,6 +61,30 @@ class Colis224_Client_Portal_Enhanced {
     }
 
     /**
+     * Vérifier si le client connecté est un agent/admin (et non un simple client)
+     * Les agents peuvent créer des colis, les clients simples non
+     *
+     * @param int $client_id ID du client
+     * @return bool True si agent/admin, False sinon
+     */
+    private static function is_agent_or_admin($client_id) {
+        // Vérifier si c'est un utilisateur WordPress avec les bonnes permissions
+        if (is_user_logged_in()) {
+            $user = wp_get_current_user();
+            // Admin ou rôle avec capability de gestion
+            if (current_user_can('colis224_manage_all') ||
+                current_user_can('administrator') ||
+                current_user_can('manage_options')) {
+                return true;
+            }
+        }
+
+        // Par défaut, les clients de l'espace client n'ont PAS le droit de créer des colis
+        // Seuls les utilisateurs WordPress (agents/admins) peuvent le faire
+        return false;
+    }
+
+    /**
      * Afficher l'espace client amélioré dans le shortcode
      */
     public static function render_enhanced_portal($client_id) {
@@ -91,6 +116,9 @@ class Colis224_Client_Portal_Enhanced {
 
         // Compter les messages non lus
         $unread_count = self::get_unread_messages_count($client_id);
+
+        // Vérifier si c'est un agent (peut créer colis/clients/départs)
+        $is_agent = self::is_agent_or_admin($client_id);
 
         ob_start();
         ?>
@@ -187,9 +215,11 @@ class Colis224_Client_Portal_Enhanced {
                 <button class="tab-btn active" data-tab="parcels">
                     <span class="dashicons dashicons-archive"></span> Mes Colis
                 </button>
+                <?php if ($is_agent): ?>
                 <button class="tab-btn" data-tab="add">
                     <span class="dashicons dashicons-plus-alt"></span> Ajouter
                 </button>
+                <?php endif; ?>
                 <button class="tab-btn" data-tab="tickets">
                     <span class="dashicons dashicons-tickets-alt"></span> Support (<?php echo count($tickets); ?>)
                 </button>
@@ -237,7 +267,8 @@ class Colis224_Client_Portal_Enhanced {
                     <?php endif; ?>
                 </div>
 
-                <!-- ONGLET: Ajouter -->
+                <!-- ONGLET: Ajouter (réservé agents uniquement) -->
+                <?php if ($is_agent): ?>
                 <div class="tab-content" id="tab-add">
                     <div class="add-actions-tabs">
                         <button class="sub-tab-btn active" data-subtab="add-parcel">
@@ -418,6 +449,7 @@ class Colis224_Client_Portal_Enhanced {
                         </form>
                     </div>
                 </div>
+                <?php endif; // Fin condition is_agent pour onglet Ajouter ?>
 
                 <!-- ONGLET: Support / Tickets -->
                 <div class="tab-content" id="tab-tickets">
@@ -1619,7 +1651,7 @@ class Colis224_Client_Portal_Enhanced {
                 console.log('📝 Création du ticket...');
                 var subject = $('#form-create-ticket input[name="subject"]').val();
                 var message = $('#form-create-ticket textarea[name="message"]').val();
-                
+
                 console.log('Sujet:', subject);
                 console.log('Message:', message);
 
@@ -1634,20 +1666,63 @@ class Colis224_Client_Portal_Enhanced {
                     },
                     beforeSend: function() {
                         console.log('⏳ Envoi en cours...');
+                        $('#form-create-ticket button[type="submit"]').prop('disabled', true).text('Envoi...');
                     },
                     success: function(response) {
                         console.log('✅ Réponse reçue:', response);
                         if (response.success) {
                             alert('✅ Ticket créé avec succès ! Nous vous répondrons bientôt.');
-                            location.reload();
+
+                            // Masquer et réinitialiser le formulaire
+                            $('#new-ticket-form').slideUp();
+                            $('#form-create-ticket')[0].reset();
+                            $('#form-create-ticket button[type="submit"]').prop('disabled', false).html('<span class="dashicons dashicons-yes"></span> Envoyer');
+
+                            // Recharger la liste des tickets via AJAX
+                            refreshTicketsList();
                         } else {
                             alert('❌ Erreur : ' + (response.data ? response.data.message : 'Erreur inconnue'));
+                            $('#form-create-ticket button[type="submit"]').prop('disabled', false).text('Envoyer');
                         }
                     },
                     error: function(xhr, status, error) {
                         console.error('❌ Erreur AJAX:', status, error);
                         console.error('Réponse:', xhr.responseText);
                         alert('❌ Erreur de connexion. Veuillez réessayer.');
+                        $('#form-create-ticket button[type="submit"]').prop('disabled', false).text('Envoyer');
+                    }
+                });
+            }
+
+            // Rafraîchir la liste des tickets
+            function refreshTicketsList() {
+                console.log('🔄 Rafraîchissement de la liste des tickets...');
+
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'colis224_client_get_tickets',
+                        nonce: '<?php echo wp_create_nonce('colis224_client_portal'); ?>'
+                    },
+                    success: function(response) {
+                        console.log('✅ Liste tickets reçue:', response);
+                        if (response.success) {
+                            // Mettre à jour le contenu de la liste
+                            $('#tickets-list').html(response.data.html);
+
+                            // Mettre à jour le compteur dans l'onglet
+                            $('.tab-btn[data-tab="tickets"]').html('<span class="dashicons dashicons-tickets-alt"></span> Support (' + response.data.count + ')');
+
+                            // Réattacher les événements aux nouveaux boutons
+                            $('.btn-view-ticket').off('click').on('click', function() {
+                                var ticketId = $(this).data('ticket-id');
+                                showTicketConversation(ticketId);
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('❌ Erreur rafraîchissement tickets:', status, error);
                     }
                 });
             }
@@ -1888,6 +1963,71 @@ class Colis224_Client_Portal_Enhanced {
     private static function get_status_class($status) {
         $status = strtolower(str_replace(' ', '-', $status));
         return $status;
+    }
+
+    /**
+     * AJAX: Récupérer la liste des tickets du client connecté
+     */
+    public function ajax_get_tickets() {
+        // Démarrer la session si nécessaire
+        if (!session_id()) {
+            session_start();
+        }
+
+        // Vérifier le nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_client_portal')) {
+            wp_send_json_error(array('message' => 'Nonce invalide'));
+            return;
+        }
+
+        if (!isset($_SESSION['colis224_client_id'])) {
+            wp_send_json_error(array('message' => 'Non connecté'));
+            return;
+        }
+
+        $client_id = intval($_SESSION['colis224_client_id']);
+        $tickets = self::get_client_tickets($client_id);
+
+        if ($tickets === false) {
+            wp_send_json_error(array('message' => 'Erreur lors du chargement des tickets'));
+            return;
+        }
+
+        ob_start();
+        if (empty($tickets)) {
+            ?>
+            <div class="empty-state">
+                <span class="dashicons dashicons-tickets-alt"></span>
+                <p>Vous n'avez pas encore de ticket de support.</p>
+                <p class="help-text">Cliquez sur "Nouveau Ticket" pour contacter notre équipe.</p>
+            </div>
+            <?php
+        } else {
+            foreach ($tickets as $ticket) {
+                ?>
+                <div class="ticket-item" data-ticket-id="<?php echo $ticket->id; ?>">
+                    <div class="ticket-header">
+                        <span class="ticket-number"><?php echo esc_html($ticket->ticket_number); ?></span>
+                        <span class="ticket-status status-<?php echo esc_attr($ticket->status); ?>">
+                            <?php echo esc_html(ucfirst(str_replace('_', ' ', $ticket->status))); ?>
+                        </span>
+                    </div>
+                    <h4 class="ticket-subject"><?php echo esc_html($ticket->subject); ?></h4>
+                    <p class="ticket-category">📁 <?php echo esc_html(ucfirst($ticket->category)); ?></p>
+                    <p class="ticket-date">📅 <?php echo date('d/m/Y H:i', strtotime($ticket->created_at)); ?></p>
+                    <button class="btn-view-ticket" data-ticket-id="<?php echo $ticket->id; ?>">
+                        Voir la conversation →
+                    </button>
+                </div>
+                <?php
+            }
+        }
+        $html = ob_get_clean();
+
+        wp_send_json_success(array(
+            'html' => $html,
+            'count' => count($tickets)
+        ));
     }
 
     /**
@@ -2475,9 +2615,18 @@ class Colis224_Client_Portal_Enhanced {
             return;
         }
 
+        $client_id = intval($_SESSION['colis224_client_id']);
+
+        // SÉCURITÉ: Vérifier que l'utilisateur est un agent ou admin
+        if (!self::is_agent_or_admin($client_id)) {
+            wp_send_json_error(array(
+                'message' => '⛔ Accès refusé : Seuls les agents peuvent créer des colis.'
+            ));
+            return;
+        }
+
         global $wpdb;
         $table_parcels = $wpdb->prefix . 'colis224_parcels';
-        $client_id = intval($_SESSION['colis224_client_id']);
 
         // Générer le numéro de suivi
         $recipient_phone = sanitize_text_field($_POST['recipient_phone']);
@@ -2541,6 +2690,16 @@ class Colis224_Client_Portal_Enhanced {
             return;
         }
 
+        $client_id = intval($_SESSION['colis224_client_id']);
+
+        // SÉCURITÉ: Vérifier que l'utilisateur est un agent ou admin
+        if (!self::is_agent_or_admin($client_id)) {
+            wp_send_json_error(array(
+                'message' => '⛔ Accès refusé : Seuls les agents peuvent créer des clients.'
+            ));
+            return;
+        }
+
         global $wpdb;
         $table_clients = $wpdb->prefix . 'colis224_clients';
 
@@ -2597,6 +2756,16 @@ class Colis224_Client_Portal_Enhanced {
 
         if (!isset($_SESSION['colis224_client_id'])) {
             wp_send_json_error(array('message' => 'Non connecté'));
+            return;
+        }
+
+        $client_id = intval($_SESSION['colis224_client_id']);
+
+        // SÉCURITÉ: Vérifier que l'utilisateur est un agent ou admin
+        if (!self::is_agent_or_admin($client_id)) {
+            wp_send_json_error(array(
+                'message' => '⛔ Accès refusé : Seuls les agents peuvent créer des départs.'
+            ));
             return;
         }
 
