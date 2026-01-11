@@ -236,27 +236,63 @@ class Colis224_Frontend_Portal {
             </div>';
         }
 
-        // Vérifier si le client est connecté
-        $is_logged_in = Colis224_Client_Auth::is_client_logged_in();
+        // PRIORITÉ 1: Vérifier si c'est un utilisateur WordPress avec permissions agent/admin
+        // Cela permet aux agents WordPress de voir leur interface sans connexion client
+        if (is_user_logged_in() && $this->is_wordpress_agent_or_admin()) {
+            // Afficher le dashboard agent (WordPress)
+            $this->display_wordpress_agent_dashboard();
+        }
+        // PRIORITÉ 2: Vérifier si le client est connecté via le système client
+        else {
+            $is_logged_in = Colis224_Client_Auth::is_client_logged_in();
 
-        if (!$is_logged_in) {
-            $this->display_login_form();
-        } else {
-            // Vérifier si la session n'est pas expirée
-            if (Colis224_Client_Auth::is_session_expired()) {
-                Colis224_Client_Auth::logout_client();
-                echo '<div class="colis224-notice colis224-notice-warning">
-                    <p>⚠️ Votre session a expiré. Veuillez vous reconnecter.</p>
-                </div>';
+            if (!$is_logged_in) {
                 $this->display_login_form();
             } else {
-                // Rafraîchir la session
-                Colis224_Client_Auth::refresh_session();
-                $this->display_client_dashboard();
+                // Vérifier si la session n'est pas expirée
+                if (Colis224_Client_Auth::is_session_expired()) {
+                    Colis224_Client_Auth::logout_client();
+                    echo '<div class="colis224-notice colis224-notice-warning">
+                        <p>⚠️ Votre session a expiré. Veuillez vous reconnecter.</p>
+                    </div>';
+                    $this->display_login_form();
+                } else {
+                    // Rafraîchir la session
+                    Colis224_Client_Auth::refresh_session();
+                    $this->display_client_dashboard();
+                }
             }
         }
 
         return ob_get_clean();
+    }
+
+    /**
+     * Vérifier si l'utilisateur WordPress a les permissions agent/admin
+     */
+    private function is_wordpress_agent_or_admin() {
+        if (!is_user_logged_in()) {
+            return false;
+        }
+
+        $user = wp_get_current_user();
+
+        // Vérifier les capabilities
+        if (current_user_can('colis224_manage_all') ||
+            current_user_can('administrator') ||
+            current_user_can('manage_options')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Afficher le dashboard pour un agent WordPress (pas un client)
+     */
+    private function display_wordpress_agent_dashboard() {
+        // Utiliser le portail amélioré avec client_id = 0 pour indiquer que c'est un agent WordPress
+        echo Colis224_Client_Portal_Enhanced::render_enhanced_portal(0);
     }
 
     /**

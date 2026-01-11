@@ -90,35 +90,78 @@ class Colis224_Client_Portal_Enhanced {
     public static function render_enhanced_portal($client_id) {
         global $wpdb;
 
-        $client = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}colis224_clients WHERE id = %d",
-            $client_id
-        ));
+        // CAS SPÉCIAL: client_id = 0 signifie que c'est un agent WordPress (pas un client de la DB)
+        $is_wordpress_agent = ($client_id === 0);
 
-        if (!$client) {
-            return '<p>Client introuvable.</p>';
+        if ($is_wordpress_agent) {
+            // Créer un objet client virtuel avec les infos WordPress
+            $user = wp_get_current_user();
+            $client = new stdClass();
+            $client->id = 0;
+            $client->name = $user->display_name ?: $user->user_login;
+            $client->phone = $user->user_email ?: 'Agent WordPress';
+            $client->email = $user->user_email;
+
+            // Récupérer TOUS les colis (agents voient tout)
+            $parcels = $wpdb->get_results(
+                "SELECT * FROM {$wpdb->prefix}colis224_parcels
+                ORDER BY created_at DESC
+                LIMIT 50"
+            );
+
+            // Pas de fidélité pour les agents WordPress
+            $loyalty_info = array(
+                'total_parcels' => 0,
+                'total_weight' => 0,
+                'level' => 'Agent',
+                'points' => 0
+            );
+
+            // Récupérer TOUS les tickets (agents voient tout)
+            $tickets = $wpdb->get_results(
+                "SELECT * FROM {$wpdb->prefix}colis224_tickets
+                ORDER BY created_at DESC
+                LIMIT 50"
+            );
+
+            // Pas de messages non lus pour agents
+            $unread_count = 0;
+
+            // Les agents WordPress ont toujours les droits agent
+            $is_agent = true;
+
+        } else {
+            // CAS NORMAL: client de la base de données
+            $client = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}colis224_clients WHERE id = %d",
+                $client_id
+            ));
+
+            if (!$client) {
+                return '<p>Client introuvable.</p>';
+            }
+
+            // Récupérer les colis du client
+            $parcels = $wpdb->get_results($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}colis224_parcels
+                WHERE client_id = %d
+                ORDER BY created_at DESC
+                LIMIT 20",
+                $client_id
+            ));
+
+            // Récupérer les informations de fidélité
+            $loyalty_info = self::get_client_loyalty_info($client_id);
+
+            // Récupérer les tickets
+            $tickets = self::get_client_tickets($client_id);
+
+            // Compter les messages non lus
+            $unread_count = self::get_unread_messages_count($client_id);
+
+            // Vérifier si c'est un agent (peut créer colis/clients/départs)
+            $is_agent = self::is_agent_or_admin($client_id);
         }
-
-        // Récupérer les colis du client
-        $parcels = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}colis224_parcels 
-            WHERE client_id = %d 
-            ORDER BY created_at DESC 
-            LIMIT 20",
-            $client_id
-        ));
-
-        // Récupérer les informations de fidélité
-        $loyalty_info = self::get_client_loyalty_info($client_id);
-
-        // Récupérer les tickets
-        $tickets = self::get_client_tickets($client_id);
-
-        // Compter les messages non lus
-        $unread_count = self::get_unread_messages_count($client_id);
-
-        // Vérifier si c'est un agent (peut créer colis/clients/départs)
-        $is_agent = self::is_agent_or_admin($client_id);
 
         ob_start();
         ?>
@@ -128,9 +171,17 @@ class Colis224_Client_Portal_Enhanced {
             <div class="colis224-portal-header-enhanced">
                 <div class="portal-welcome">
                     <h2>👋 Bienvenue, <?php echo esc_html($client->name); ?></h2>
-                    <p class="client-phone">📞 <?php echo esc_html($client->phone); ?></p>
+                    <p class="client-phone">
+                        <?php if ($is_wordpress_agent): ?>
+                            <span class="agent-badge" style="background: #0073aa; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+                                🔑 AGENT WORDPRESS
+                            </span>
+                        <?php else: ?>
+                            📞 <?php echo esc_html($client->phone); ?>
+                        <?php endif; ?>
+                    </p>
                 </div>
-                
+
                 <div class="portal-header-actions">
                     <!-- Notification Badge -->
                     <?php if ($unread_count > 0): ?>
@@ -139,7 +190,7 @@ class Colis224_Client_Portal_Enhanced {
                         <span class="badge-count"><?php echo $unread_count; ?></span>
                     </div>
                     <?php endif; ?>
-                    
+
                     <!-- Bouton Chat Flottant -->
                     <button id="btn-toggle-chat" class="btn-chat-toggle" title="Live Chat">
                         <span class="dashicons dashicons-format-chat"></span>
@@ -148,16 +199,24 @@ class Colis224_Client_Portal_Enhanced {
                         <span class="chat-badge"><?php echo $unread_count; ?></span>
                         <?php endif; ?>
                     </button>
-                    
+
                     <!-- Déconnexion -->
-                    <a href="<?php echo wp_nonce_url('?action=colis224_logout', 'colis224_logout'); ?>" class="btn-logout">
-                        <span class="dashicons dashicons-exit"></span> Déconnexion
-                    </a>
+                    <?php if ($is_wordpress_agent): ?>
+                        <!-- Déconnexion WordPress -->
+                        <a href="<?php echo wp_logout_url(get_permalink()); ?>" class="btn-logout">
+                            <span class="dashicons dashicons-exit"></span> Déconnexion
+                        </a>
+                    <?php else: ?>
+                        <!-- Déconnexion Client -->
+                        <a href="<?php echo wp_nonce_url('?action=colis224_logout', 'colis224_logout'); ?>" class="btn-logout">
+                            <span class="dashicons dashicons-exit"></span> Déconnexion
+                        </a>
+                    <?php endif; ?>
                 </div>
             </div>
 
-            <!-- Programme de Fidélité -->
-            <?php if ($loyalty_info): ?>
+            <!-- Programme de Fidélité (Clients uniquement, pas pour agents WordPress) -->
+            <?php if ($loyalty_info && !$is_wordpress_agent): ?>
             <div class="loyalty-card-enhanced">
                 <div class="loyalty-header">
                     <h3>🎁 Programme de Fidélité</h3>
