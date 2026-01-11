@@ -1,6 +1,6 @@
 # Changelog - Version 2.17.0
 
-Date: 2026-01-10
+Date: 2026-01-11 (Final)
 
 ## ✨ Nouvelles Fonctionnalités
 
@@ -58,25 +58,39 @@ Date: 2026-01-10
 
 **Cause identifiée:**
 - Utilisation exclusive de sessions PHP (`$_SESSION`)
-- Problèmes de compatibilité avec les systèmes de cache
+- Problèmes de compatibilité avec les systèmes de cache (WP Rocket, Varnish, etc.)
 - Sessions perdues après rechargement de page
+- Cookies sans attribut `SameSite` rejetés par les navigateurs modernes
+- Cache AJAX empêchant la redirection après login
 
 **Solution (Système Hybride Robuste):**
 - ✅ Session PHP maintenue pour compatibilité
-- ✅ **Cookies sécurisés** (HttpOnly, Secure si HTTPS)
+- ✅ **Cookies sécurisés** (HttpOnly, Secure si HTTPS, **SameSite: Lax**)
 - ✅ **Tokens** stockés dans des transients WordPress (2h d'expiration)
 - ✅ Restauration automatique de la session si cookie valide
 - ✅ Nettoyage propre lors de la déconnexion (session + cookie + transient)
-- ✅ Meilleure compatibilité avec les systèmes de cache (Varnish, Redis, etc.)
+- ✅ Meilleure compatibilité avec les systèmes de cache (Varnish, Redis, WP Rocket)
+- ✅ **Redirection optimisée** avec cache-busting (timestamp)
+- ✅ **Headers no-cache** pour la réponse AJAX de connexion
 
 **Fichiers modifiés:**
 - `includes/class-colis224-client-auth.php` (amélioration complète du système d'auth)
+- `assets/js/frontend-script.js` (redirection avec cache-busting)
+- `includes/class-colis224-frontend-portal.php` (headers no-cache AJAX)
 
 **Fonctionnement technique:**
-1. **Connexion:** Crée session + cookie + transient avec token unique
-2. **Vérification:** Vérifie d'abord session, puis cookie si session perdue
-3. **Restauration:** Si cookie valide et token correspond, restaure la session automatiquement
-4. **Déconnexion:** Nettoie tout (session + cookie + transient)
+1. **Connexion:** Crée session + cookie (SameSite: Lax) + transient avec token unique
+2. **AJAX Login:** Retourne réponse avec headers no-cache pour éviter problèmes WP Rocket
+3. **Redirection:** Utilise `window.location.href` avec paramètre `?_t=timestamp` pour forcer rechargement
+4. **Vérification:** Vérifie d'abord session, puis cookie si session perdue
+5. **Restauration:** Si cookie valide et token correspond, restaure la session automatiquement
+6. **Déconnexion:** Nettoie tout (session + cookie + transient)
+
+**Compatibilité navigateurs modernes:**
+- Chrome 80+ (require SameSite attribute)
+- Firefox 69+ (require SameSite attribute)
+- Safari 13+ (require SameSite attribute)
+- Edge 80+ (require SameSite attribute)
 
 ---
 
@@ -117,8 +131,10 @@ Date: 2026-01-10
    - Tokens uniques générés avec `wp_hash()` et `wp_salt('auth')`
    - Cookies HttpOnly (protection XSS)
    - Cookies Secure si HTTPS
+   - **Cookies SameSite: Lax** (requis par navigateurs modernes, protection CSRF)
    - Tokens stockés en transients (expiration automatique)
    - Base64 encoding du cookie (obfuscation simple)
+   - Headers no-cache sur réponses AJAX (évite problèmes cache)
 
 ---
 
@@ -236,8 +252,10 @@ Date: 2026-01-10
 
 ### Compatibilité
 - ✅ WordPress 6.0+
-- ✅ PHP 8.0+
+- ✅ PHP 7.3+ (requis pour setcookie options array avec SameSite)
 - ✅ Compatible avec les systèmes de cache (amélioration majeure)
+- ✅ Compatible WP Rocket, Varnish, Redis, autres systèmes de cache
+- ✅ Navigateurs modernes (Chrome 80+, Firefox 69+, Safari 13+, Edge 80+)
 - ✅ Rétrocompatible avec les versions précédentes
 
 ### Migration Automatique
@@ -254,9 +272,12 @@ Date: 2026-01-10
 
 ## 🐛 Bugs Corrigés
 
-1. **Dashboard client ne s'affiche pas après connexion**
+1. **Dashboard client ne s'affiche pas après connexion (CRITIQUE)**
    - Cause: Sessions PHP perdues avec les systèmes de cache
-   - Fix: Système hybride session + cookie + transient
+   - Cause: Cookies rejetés par navigateurs modernes (missing SameSite)
+   - Cause: Cache AJAX empêchant redirection
+   - Fix: Système hybride session + cookie (SameSite: Lax) + transient
+   - Fix: Redirection avec cache-busting + headers no-cache
 
 2. **Impossible d'ajouter/modifier des pays**
    - Cause: Liste codée en dur
@@ -265,6 +286,11 @@ Date: 2026-01-10
 3. **Pays désactivés visibles dans les formulaires**
    - Cause: Pas de filtre `is_active`
    - Fix: Ajout du filtre dans toutes les requêtes
+
+4. **Redirection ne fonctionne pas après login (WP Rocket)**
+   - Cause: WP Rocket defer JavaScript + cache AJAX
+   - Fix: Cache-busting avec timestamp `?_t=` + headers no-cache
+   - Fix: Remplacement `window.location.reload()` par `window.location.href`
 
 ---
 
@@ -292,6 +318,7 @@ Date: 2026-01-10
 ## 👨‍💻 Développeur
 
 Modifications effectuées par Claude Code (AI Developer)
-Date: 10 janvier 2026
+Version initiale: 10 janvier 2026
+Corrections finales: 11 janvier 2026
 
 **Contact Support:** https://github.com/anthropics/claude-code/issues
