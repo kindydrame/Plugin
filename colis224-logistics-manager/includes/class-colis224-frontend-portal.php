@@ -229,6 +229,27 @@ class Colis224_Frontend_Portal {
             session_start();
         }
 
+        // 🔍 DEBUG MODE (À RETIRER EN PRODUCTION)
+        $debug_mode = defined('WP_DEBUG') && WP_DEBUG;
+        if ($debug_mode && current_user_can('manage_options')) {
+            echo '<div style="background: #fff3cd; border: 2px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 8px;">';
+            echo '<h3 style="margin: 0 0 10px 0; color: #856404;">🔍 DEBUG - État de l\'authentification</h3>';
+            echo '<p><strong>WordPress login:</strong> ' . (is_user_logged_in() ? '✅ OUI' : '❌ NON') . '</p>';
+
+            if (is_user_logged_in()) {
+                $user = wp_get_current_user();
+                echo '<p><strong>Utilisateur:</strong> ' . esc_html($user->user_login) . ' (' . esc_html($user->display_name) . ')</p>';
+                echo '<p><strong>Rôles:</strong> ' . implode(', ', $user->roles) . '</p>';
+                echo '<p><strong>Est agent/admin (is_wordpress_agent_or_admin):</strong> ' . ($this->is_wordpress_agent_or_admin() ? '✅ OUI' : '❌ NON') . '</p>';
+                echo '<p><strong>Can colis224_manage_all:</strong> ' . (current_user_can('colis224_manage_all') ? '✅ OUI' : '❌ NON') . '</p>';
+                echo '<p><strong>Can administrator:</strong> ' . (current_user_can('administrator') ? '✅ OUI' : '❌ NON') . '</p>';
+                echo '<p><strong>Can manage_options:</strong> ' . (current_user_can('manage_options') ? '✅ OUI' : '❌ NON') . '</p>';
+            }
+
+            echo '<p><strong>Session client active:</strong> ' . (Colis224_Client_Auth::is_client_logged_in() ? '✅ OUI' : '❌ NON') . '</p>';
+            echo '</div>';
+        }
+
         // Afficher un message de déconnexion si présent ET si l'utilisateur n'est PAS connecté
         if (isset($_GET['logout']) && $_GET['logout'] === 'success' && !Colis224_Client_Auth::is_client_logged_in()) {
             echo '<div class="colis224-notice colis224-notice-success">
