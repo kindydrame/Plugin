@@ -53,9 +53,35 @@ class Colis224_Agent_Portal {
      * Vérifier si l'utilisateur a les permissions agent
      */
     private function is_agent() {
-        return current_user_can('administrator') ||
-               current_user_can('manage_options') ||
-               current_user_can('colis224_manage_all');
+        // Admins ont toujours accès
+        if (current_user_can('administrator') || current_user_can('manage_options')) {
+            return true;
+        }
+
+        // Vérifier les capabilities Colis224 pour agents
+        $agent_capabilities = array(
+            'colis224_manage_all',      // Manager/Admin Colis224
+            'colis224_create_parcel',   // Agent qui peut créer des colis
+            'colis224_view_parcels',    // Agent qui peut voir des colis
+        );
+
+        foreach ($agent_capabilities as $cap) {
+            if (current_user_can($cap)) {
+                return true;
+            }
+        }
+
+        // Vérifier si l'utilisateur a un rôle contenant "agent" (insensible à la casse)
+        $user = wp_get_current_user();
+        if (!empty($user->roles)) {
+            foreach ($user->roles as $role) {
+                if (stripos($role, 'agent') !== false) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
