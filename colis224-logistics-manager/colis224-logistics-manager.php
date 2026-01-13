@@ -3,7 +3,7 @@
  * Plugin Name: Colis224 Logistics Manager
  * Plugin URI: https://colis224.com
  * Description: Système complet de gestion logistique pour entreprise de livraison internationale (Chine, France, Maroc, Sénégal, Côte d'Ivoire, Guinée)
- * Version: 2.17.0
+ * Version: 2.18.0
  * Author: Colis224
  * Author URI: https://colis224.com
  * License: GPL-2.0+
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Constantes du plugin
-define('COLIS224_VERSION', '2.17.0');
+define('COLIS224_VERSION', '2.18.0');
 define('COLIS224_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('COLIS224_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('COLIS224_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -88,6 +88,11 @@ class Colis224_Logistics_Manager {
             new Colis224_Client_Portal_Enhanced();
         }
 
+        // 🆕 Portail agent (v2.18.0) - Espace séparé pour agents
+        if (class_exists('Colis224_Agent_Portal')) {
+            new Colis224_Agent_Portal();
+        }
+
         // Widget départs
         if (class_exists('Colis224_Departures_Widget')) {
             new Colis224_Departures_Widget();
@@ -151,6 +156,10 @@ class Colis224_Logistics_Manager {
                 Colis224_Loyalty::create_default_program();
                 Colis224_Warehouses::create_default_warehouse();
             }
+
+            // Exécuter les migrations DB (v2.18.0+)
+            require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-db-migration.php';
+            Colis224_DB_Migration::run_migrations();
 
             // Mettre à jour la version
             update_option('colis224_version', COLIS224_VERSION);
@@ -234,6 +243,11 @@ class Colis224_Logistics_Manager {
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-invoice.php';
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-autocomplete.php';
 
+        // Système d'approbation et espace agent (v2.18.0)
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-db-migration.php';
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-agent-portal.php';
+        require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-approvals.php';
+
         // Nouvelles fonctionnalités v2.2+ (5 Modules Majeurs)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-mobile-money.php';      // Paiements Mobile Money
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-rest-api.php';          // API REST complète
@@ -307,6 +321,11 @@ class Colis224_Logistics_Manager {
         add_action('admin_menu', array($admin, 'add_plugin_admin_menu'));
         add_action('admin_enqueue_scripts', array($admin, 'enqueue_styles'));
         add_action('admin_enqueue_scripts', array($admin, 'enqueue_scripts'));
+
+        // Page de validation des actions agents (v2.18.0)
+        if (class_exists('Colis224_Approvals_Admin')) {
+            new Colis224_Approvals_Admin();
+        }
     }
 }
 
