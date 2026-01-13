@@ -23,6 +23,11 @@ class Colis224_Agent_Portal {
         add_action('wp_ajax_colis224_agent_create_parcel', array($this, 'ajax_create_parcel'));
         add_action('wp_ajax_colis224_agent_create_departure', array($this, 'ajax_create_departure'));
         add_action('wp_ajax_colis224_agent_get_pending', array($this, 'ajax_get_pending_items'));
+
+        // Nouveaux AJAX handlers v2.18.2
+        add_action('wp_ajax_colis224_agent_search_clients', array($this, 'ajax_search_clients'));
+        add_action('wp_ajax_colis224_agent_create_client', array($this, 'ajax_create_client'));
+        add_action('wp_ajax_colis224_agent_upload_photos', array($this, 'ajax_upload_photos'));
     }
 
     /**
@@ -437,92 +442,248 @@ class Colis224_Agent_Portal {
         global $wpdb;
 
         // Récupérer les données nécessaires
-        $clients = $wpdb->get_results("SELECT id, name, phone FROM {$wpdb->prefix}colis224_clients ORDER BY name");
         $countries = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}colis224_countries WHERE is_active = 1 ORDER BY name");
         $transport_modes = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}colis224_transport_modes ORDER BY name");
+
+        // Générer numéro de facture automatique
+        $prefix = get_option('colis224_parcel_prefix', 'PA');
+        $next_number = $wpdb->get_var("SELECT MAX(CAST(SUBSTRING(tracking_number, LENGTH('$prefix')+1) AS UNSIGNED)) FROM {$wpdb->prefix}colis224_parcels") + 1;
+        $suggested_tracking = $prefix . str_pad($next_number, 6, '0', STR_PAD_LEFT);
+
+        // Générer numéro de facture unique
+        $invoice_number = strtoupper(substr(md5(uniqid()), 0, 4));
 
         ?>
         <div class="agent-form">
             <h3>📦 Nouveau Colis (Soumission à Validation)</h3>
+            <p class="form-description">Remplissez tous les champs. Un récapitulatif vous sera présenté avant validation.</p>
 
             <form id="form-agent-create-parcel" class="colis224-form">
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="client_id">Client *</label>
-                        <select name="client_id" id="client_id" required>
-                            <option value="">Sélectionner un client</option>
-                            <?php foreach ($clients as $client): ?>
-                                <option value="<?php echo $client->id; ?>">
-                                    <?php echo esc_html($client->name); ?> - <?php echo esc_html($client->phone); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                <!-- Section 1: Informations Client -->
+                <div class="form-section">
+                    <h4>👤 Informations Client</h4>
+
+                    <div class="form-row">
+                        <div class="form-group form-group-full">
+                            <label for="client_search">Rechercher Client *</label>
+                            <div class="autocomplete-wrapper">
+                                <input type="text"
+                                       id="client_search"
+                                       placeholder="Tapez nom, prénom, téléphone ou email..."
+                                       autocomplete="off">
+                                <div id="client_autocomplete_results" class="autocomplete-results"></div>
+                                <button type="button" id="btn-new-client" class="btn-secondary">
+                                    <span class="dashicons dashicons-plus"></span> Nouveau Client
+                                </button>
+                            </div>
+                            <input type="hidden" name="client_id" id="client_id">
+                            <p class="help-text">Recherchez un client existant ou créez-en un nouveau</p>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="tracking_number">Numéro de Suivi *</label>
-                        <input type="text" name="tracking_number" id="tracking_number"
-                               placeholder="Ex: PA1234" required>
+                    <!-- Formulaire nouveau client (caché par défaut) -->
+                    <div id="new-client-form" style="display: none;" class="subsection">
+                        <h5>➕ Créer un Nouveau Client</h5>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="new_client_name">Nom & Prénom *</label>
+                                <input type="text" id="new_client_name" placeholder="Ex: Jean Dupont">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="new_client_phone">Téléphone *</label>
+                                <input type="tel" id="new_client_phone" placeholder="Ex: +224 XXX XXX XXX">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="new_client_email">Email</label>
+                                <input type="email" id="new_client_email" placeholder="email@exemple.com">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="new_client_id_card">N° Carte d'Identité</label>
+                                <input type="text" id="new_client_id_card" placeholder="Ex: CN123456">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="new_client_address">Adresse</label>
+                            <textarea id="new_client_address" rows="2" placeholder="Adresse complète du client"></textarea>
+                        </div>
+
+                        <button type="button" id="btn-save-new-client" class="btn-primary">
+                            <span class="dashicons dashicons-yes"></span> Créer ce Client
+                        </button>
+                        <button type="button" id="btn-cancel-new-client" class="btn-secondary">
+                            Annuler
+                        </button>
+                    </div>
+
+                    <!-- Affichage infos client sélectionné -->
+                    <div id="selected-client-info" style="display: none;" class="client-info-box">
+                        <h5>✅ Client Sélectionné</h5>
+                        <div id="selected-client-details"></div>
+                        <button type="button" id="btn-change-client" class="btn-link">
+                            Changer de client
+                        </button>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="invoice_number">N° Facture *</label>
+                            <input type="text"
+                                   name="invoice_number"
+                                   id="invoice_number"
+                                   value="<?php echo esc_attr($invoice_number); ?>"
+                                   readonly
+                                   style="background-color: #f5f5f5;">
+                            <p class="help-text">Généré automatiquement</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tracking_number">N° Suivi (PA) *</label>
+                            <input type="text"
+                                   name="tracking_number"
+                                   id="tracking_number"
+                                   value="<?php echo esc_attr($suggested_tracking); ?>"
+                                   required>
+                        </div>
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="sender_name">Expéditeur</label>
-                        <input type="text" name="sender_name" id="sender_name">
+                <!-- Section 2: Expéditeur -->
+                <div class="form-section">
+                    <h4>📤 Informations Expéditeur</h4>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sender_name">Prénom & Nom Expéditeur</label>
+                            <input type="text" name="sender_name" id="sender_name" placeholder="Ex: Marie Konaté">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sender_phone">Téléphone Expéditeur</label>
+                            <input type="tel" name="sender_phone" id="sender_phone" placeholder="Ex: +33 6 XX XX XX XX">
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="sender_phone">Téléphone Expéditeur</label>
-                        <input type="text" name="sender_phone" id="sender_phone">
-                    </div>
-                </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sender_id_card">N° Carte d'Identité Nationale</label>
+                            <input type="text" name="sender_id_card" id="sender_id_card" placeholder="Ex: CN123456789">
+                        </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="recipient_name">Destinataire *</label>
-                        <input type="text" name="recipient_name" id="recipient_name" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="recipient_phone">Téléphone Destinataire *</label>
-                        <input type="text" name="recipient_phone" id="recipient_phone" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="recipient_address">Adresse Destinataire *</label>
-                    <textarea name="recipient_address" id="recipient_address" required></textarea>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="origin_country_id">Pays d'Origine</label>
-                        <select name="origin_country_id" id="origin_country_id">
-                            <option value="">Sélectionner</option>
-                            <?php foreach ($countries as $country): ?>
-                                <option value="<?php echo $country->id; ?>">
-                                    <?php echo esc_html($country->name); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="destination_country_id">Pays de Destination</label>
-                        <select name="destination_country_id" id="destination_country_id">
-                            <option value="">Sélectionner</option>
-                            <?php foreach ($countries as $country): ?>
-                                <option value="<?php echo $country->id; ?>">
-                                    <?php echo esc_html($country->name); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <div class="form-group">
+                            <label for="sender_email">Email Expéditeur</label>
+                            <input type="email" name="sender_email" id="sender_email" placeholder="email@exemple.com">
+                        </div>
                     </div>
                 </div>
 
-                <div class="form-row">
+                <!-- Section 3: Destinataire -->
+                <div class="form-section">
+                    <h4>📥 Informations Destinataire</h4>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="recipient_name">Prénom & Nom Destinataire *</label>
+                            <input type="text" name="recipient_name" id="recipient_name" required placeholder="Ex: Amadou Diallo">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recipient_phone">Téléphone Destinataire *</label>
+                            <input type="tel" name="recipient_phone" id="recipient_phone" required placeholder="Ex: +224 XXX XXX XXX">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="recipient_email">Email Destinataire</label>
+                            <input type="email" name="recipient_email" id="recipient_email" placeholder="email@exemple.com">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="recipient_address">Adresse Destinataire du Colis *</label>
+                        <textarea name="recipient_address" id="recipient_address" required rows="3" placeholder="Adresse complète de livraison"></textarea>
+                    </div>
+                </div>
+
+                <!-- Section 4: Détails du Colis -->
+                <div class="form-section">
+                    <h4>📦 Détails du Colis</h4>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="origin_country_id">Pays de Provenance *</label>
+                            <select name="origin_country_id" id="origin_country_id" required>
+                                <option value="">Sélectionner un pays</option>
+                                <?php foreach ($countries as $country): ?>
+                                    <option value="<?php echo $country->id; ?>">
+                                        <?php echo esc_html($country->name); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="destination_country_id">Pays de Destination *</label>
+                            <select name="destination_country_id" id="destination_country_id" required>
+                                <option value="">Sélectionner un pays</option>
+                                <?php foreach ($countries as $country): ?>
+                                    <option value="<?php echo $country->id; ?>">
+                                        <?php echo esc_html($country->name); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="parcel_nature">Nature du Colis *</label>
+                            <input type="text" name="parcel_nature" id="parcel_nature" required placeholder="Ex: Vêtements, Électronique, Documents...">
+                            <p class="help-text">Décrivez le contenu du colis</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="weight">Poids du Colis (kg) *</label>
+                            <input type="number" step="0.01" name="weight" id="weight" required placeholder="Ex: 5.5">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="price_eur">Tarif du Colis en € *</label>
+                            <input type="number" step="0.01" name="price_eur" id="price_eur" required placeholder="Ex: 50.00">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="price_gnf">Tarif du Colis en GNF *</label>
+                            <input type="number" step="1" name="price_gnf" id="price_gnf" required placeholder="Ex: 550000">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="payment_status">État de Paiement *</label>
+                            <select name="payment_status" id="payment_status" required>
+                                <option value="Non payé">Non payé</option>
+                                <option value="Payé">Payé</option>
+                                <option value="Partiel">Partiel</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="estimated_delivery_date">Délai Estimatif de Livraison</label>
+                            <input type="date" name="estimated_delivery_date" id="estimated_delivery_date">
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label for="transport_mode_id">Mode de Transport</label>
                         <select name="transport_mode_id" id="transport_mode_id">
@@ -534,22 +695,77 @@ class Colis224_Agent_Portal {
                             <?php endforeach; ?>
                         </select>
                     </div>
+                </div>
+
+                <!-- Section 5: Photos -->
+                <div class="form-section">
+                    <h4>📸 Photos</h4>
 
                     <div class="form-group">
-                        <label for="weight">Poids (kg) *</label>
-                        <input type="number" step="0.01" name="weight" id="weight" required>
+                        <label for="parcel_photos">Photos du Colis</label>
+                        <input type="file"
+                               id="parcel_photos"
+                               accept="image/*"
+                               multiple
+                               class="file-input">
+                        <p class="help-text">Vous pouvez sélectionner plusieurs photos (JPG, PNG)</p>
+                        <div id="parcel_photos_preview" class="photos-preview"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="receipt_photos">Photos du Reçu</label>
+                        <input type="file"
+                               id="receipt_photos"
+                               accept="image/*"
+                               multiple
+                               class="file-input">
+                        <p class="help-text">Photos du reçu papier signé</p>
+                        <div id="receipt_photos_preview" class="photos-preview"></div>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="notes">Notes</label>
-                    <textarea name="notes" id="notes"></textarea>
+                <!-- Section 6: Notes -->
+                <div class="form-section">
+                    <h4>📝 Notes Complémentaires</h4>
+
+                    <div class="form-group">
+                        <label for="notes">Remarques ou Instructions Spéciales</label>
+                        <textarea name="notes" id="notes" rows="4" placeholder="Notes additionnelles..."></textarea>
+                    </div>
                 </div>
 
-                <button type="submit" class="colis224-btn colis224-btn-primary">
-                    <span class="dashicons dashicons-yes"></span> Soumettre pour Validation
-                </button>
+                <!-- Boutons -->
+                <div class="form-actions">
+                    <button type="button" id="btn-preview-parcel" class="colis224-btn colis224-btn-primary">
+                        <span class="dashicons dashicons-visibility"></span> Vérifier & Soumettre
+                    </button>
+                    <button type="button" class="colis224-btn colis224-btn-secondary" onclick="document.getElementById('form-agent-create-parcel').reset();">
+                        <span class="dashicons dashicons-undo"></span> Réinitialiser
+                    </button>
+                </div>
             </form>
+        </div>
+
+        <!-- Modal de Récapitulatif -->
+        <div id="modal-parcel-preview" class="colis224-modal" style="display: none;">
+            <div class="colis224-modal-content modal-large">
+                <span class="colis224-modal-close">&times;</span>
+                <h3>🔍 Vérification des Informations</h3>
+                <p class="modal-subtitle">Vérifiez attentivement les informations avant de soumettre. Une fois soumis, seul l'administrateur pourra modifier.</p>
+
+                <div id="parcel-preview-content" class="preview-content">
+                    <!-- Contenu généré dynamiquement -->
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="btn-confirm-submit-parcel" class="colis224-btn colis224-btn-success">
+                        <span class="dashicons dashicons-yes"></span> Confirmer et Soumettre
+                    </button>
+                    <button type="button" id="btn-edit-parcel" class="colis224-btn colis224-btn-secondary">
+                        <span class="dashicons dashicons-edit"></span> Modifier
+                    </button>
+                </div>
+            </div>
         </div>
         <?php
     }
@@ -707,22 +923,95 @@ class Colis224_Agent_Portal {
         global $wpdb;
         $user = wp_get_current_user();
 
-        // Récupérer les données
+        // Récupérer et valider les données obligatoires
+        if (empty($_POST['client_id']) || empty($_POST['tracking_number']) ||
+            empty($_POST['recipient_name']) || empty($_POST['recipient_phone']) ||
+            empty($_POST['recipient_address']) || empty($_POST['parcel_nature'])) {
+            wp_send_json_error(array('message' => '❌ Veuillez remplir tous les champs obligatoires'));
+            return;
+        }
+
+        // Vérifier que le client existe
+        $client_exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}colis224_clients WHERE id = %d",
+            intval($_POST['client_id'])
+        ));
+
+        if (!$client_exists) {
+            wp_send_json_error(array('message' => '❌ Client introuvable'));
+            return;
+        }
+
+        // Récupérer le code client
+        $client_code = $wpdb->get_var($wpdb->prepare(
+            "SELECT client_code FROM {$wpdb->prefix}colis224_clients WHERE id = %d",
+            intval($_POST['client_id'])
+        ));
+
+        // Calculer total_amount (utiliser prix EUR comme référence)
+        $price_eur = !empty($_POST['price_eur']) ? floatval($_POST['price_eur']) : 0;
+        $price_gnf = !empty($_POST['price_gnf']) ? floatval($_POST['price_gnf']) : 0;
+
+        // Si prix EUR fourni, l'utiliser, sinon convertir GNF en EUR
+        if ($price_eur > 0) {
+            $total_amount = $price_eur;
+            $currency = 'EUR';
+        } else if ($price_gnf > 0) {
+            $exchange_rate = get_option('colis224_exchange_rate_eur', 11000);
+            $total_amount = $price_gnf / $exchange_rate;
+            $currency = 'GNF';
+        } else {
+            $total_amount = 0;
+            $currency = 'EUR';
+        }
+
+        // Préparer les données pour insertion
         $data = array(
+            'invoice_number' => sanitize_text_field($_POST['invoice_number']),
             'tracking_number' => sanitize_text_field($_POST['tracking_number']),
             'client_id' => intval($_POST['client_id']),
+            'client_code' => $client_code,
+
+            // Expéditeur
             'sender_name' => sanitize_text_field($_POST['sender_name']),
             'sender_phone' => sanitize_text_field($_POST['sender_phone']),
+            'sender_id_card' => sanitize_text_field($_POST['sender_id_card']),
+            'sender_email' => sanitize_email($_POST['sender_email']),
+
+            // Destinataire
             'recipient_name' => sanitize_text_field($_POST['recipient_name']),
             'recipient_phone' => sanitize_text_field($_POST['recipient_phone']),
+            'recipient_email' => sanitize_email($_POST['recipient_email']),
             'recipient_address' => sanitize_textarea_field($_POST['recipient_address']),
+
+            // Détails du colis
             'origin_country_id' => !empty($_POST['origin_country_id']) ? intval($_POST['origin_country_id']) : null,
             'destination_country_id' => !empty($_POST['destination_country_id']) ? intval($_POST['destination_country_id']) : null,
             'transport_mode_id' => !empty($_POST['transport_mode_id']) ? intval($_POST['transport_mode_id']) : null,
+            'parcel_nature' => sanitize_text_field($_POST['parcel_nature']),
             'weight' => floatval($_POST['weight']),
+
+            // Tarification
+            'total_amount' => $total_amount,
+            'currency' => $currency,
+            'payment_status' => sanitize_text_field($_POST['payment_status']),
+
+            // Dates
+            'estimated_delivery_date' => !empty($_POST['estimated_delivery_date']) ? sanitize_text_field($_POST['estimated_delivery_date']) : null,
+            'reception_date' => current_time('mysql', false),
+
+            // Photos (URLs séparées par des virgules)
+            'photos' => !empty($_POST['parcel_photos']) ? sanitize_textarea_field($_POST['parcel_photos']) : null,
+            'receipt_photos' => !empty($_POST['receipt_photos']) ? sanitize_textarea_field($_POST['receipt_photos']) : null,
+
+            // Notes
             'notes' => sanitize_textarea_field($_POST['notes']),
+
+            // Statuts
             'status' => 'En attente',
             'approval_status' => 'pending', // IMPORTANT: Soumis à validation
+
+            // Traçabilité
             'created_by' => $user->ID,
             'created_at' => current_time('mysql')
         );
@@ -730,7 +1019,19 @@ class Colis224_Agent_Portal {
         // Insérer dans la base
         $result = $wpdb->insert(
             $wpdb->prefix . 'colis224_parcels',
-            $data
+            $data,
+            array(
+                '%s', '%s', '%d', '%s',  // invoice, tracking, client_id, client_code
+                '%s', '%s', '%s', '%s',  // sender_name, phone, id_card, email
+                '%s', '%s', '%s', '%s',  // recipient_name, phone, email, address
+                '%d', '%d', '%d', '%s', '%f',  // countries, transport, nature, weight
+                '%f', '%s', '%s',  // amount, currency, payment_status
+                '%s', '%s',  // dates
+                '%s', '%s',  // photos
+                '%s',  // notes
+                '%s', '%s',  // status, approval_status
+                '%d', '%s'  // created_by, created_at
+            )
         );
 
         if ($result) {
@@ -741,10 +1042,13 @@ class Colis224_Agent_Portal {
             Colis224_DB_Migration::log_approval_action('parcel', $parcel_id, 'submitted');
 
             wp_send_json_success(array(
-                'message' => 'Colis soumis avec succès ! En attente de validation par l\'administrateur.'
+                'message' => '✅ Colis soumis avec succès ! En attente de validation par l\'administrateur.',
+                'parcel_id' => $parcel_id,
+                'tracking_number' => $data['tracking_number'],
+                'invoice_number' => $data['invoice_number']
             ));
         } else {
-            wp_send_json_error(array('message' => 'Erreur lors de la création du colis'));
+            wp_send_json_error(array('message' => '❌ Erreur lors de la création du colis: ' . $wpdb->last_error));
         }
     }
 
@@ -843,5 +1147,167 @@ class Colis224_Agent_Portal {
             'departures' => $pending_departures_count,
             'total' => $pending_parcels_count + $pending_departures_count
         ));
+    }
+
+    /**
+     * AJAX: Recherche de clients (autocomplete)
+     */
+    public function ajax_search_clients() {
+        // Vérifier le nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_agent_portal')) {
+            wp_send_json_error(array('message' => 'Vérification de sécurité échouée'));
+            return;
+        }
+
+        // Vérifier les permissions
+        if (!$this->is_agent()) {
+            wp_send_json_error(array('message' => '⛔ Accès refusé'));
+            return;
+        }
+
+        global $wpdb;
+
+        $search = sanitize_text_field($_POST['search']);
+
+        // Recherche dans nom, téléphone, email
+        $clients = $wpdb->get_results($wpdb->prepare("
+            SELECT id, name, phone, email, address, id_card, client_code
+            FROM {$wpdb->prefix}colis224_clients
+            WHERE name LIKE %s
+               OR phone LIKE %s
+               OR email LIKE %s
+            ORDER BY name
+            LIMIT 10
+        ", '%' . $wpdb->esc_like($search) . '%',
+           '%' . $wpdb->esc_like($search) . '%',
+           '%' . $wpdb->esc_like($search) . '%'));
+
+        wp_send_json_success(array('clients' => $clients));
+    }
+
+    /**
+     * AJAX: Créer un nouveau client
+     */
+    public function ajax_create_client() {
+        // Vérifier le nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_agent_portal')) {
+            wp_send_json_error(array('message' => 'Vérification de sécurité échouée'));
+            return;
+        }
+
+        // Vérifier les permissions
+        if (!$this->is_agent()) {
+            wp_send_json_error(array('message' => '⛔ Accès refusé : Réservé aux agents.'));
+            return;
+        }
+
+        global $wpdb;
+
+        // Données du client
+        $name = sanitize_text_field($_POST['name']);
+        $phone = sanitize_text_field($_POST['phone']);
+        $email = sanitize_email($_POST['email']);
+        $address = sanitize_textarea_field($_POST['address']);
+        $id_card = sanitize_text_field($_POST['id_card']);
+
+        // Vérifier que nom et téléphone sont fournis
+        if (empty($name) || empty($phone)) {
+            wp_send_json_error(array('message' => 'Nom et téléphone sont obligatoires'));
+            return;
+        }
+
+        // Vérifier si le téléphone existe déjà
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}colis224_clients WHERE phone = %s",
+            $phone
+        ));
+
+        if ($existing) {
+            wp_send_json_error(array('message' => 'Ce numéro de téléphone est déjà enregistré'));
+            return;
+        }
+
+        // Générer un code client unique (PA + 6 chiffres)
+        $max_code = $wpdb->get_var("
+            SELECT MAX(CAST(SUBSTRING(client_code, 3) AS UNSIGNED))
+            FROM {$wpdb->prefix}colis224_clients
+            WHERE client_code LIKE 'PA%'
+        ");
+        $next_code_number = ($max_code ? $max_code : 0) + 1;
+        $client_code = 'PA' . str_pad($next_code_number, 6, '0', STR_PAD_LEFT);
+
+        // Insérer le client
+        $inserted = $wpdb->insert(
+            $wpdb->prefix . 'colis224_clients',
+            array(
+                'name' => $name,
+                'phone' => $phone,
+                'email' => $email,
+                'address' => $address,
+                'id_card' => $id_card,
+                'client_code' => $client_code,
+                'is_active' => 1,
+                'created_at' => current_time('mysql')
+            ),
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s')
+        );
+
+        if ($inserted === false) {
+            wp_send_json_error(array('message' => 'Erreur lors de la création du client'));
+            return;
+        }
+
+        $client_id = $wpdb->insert_id;
+
+        // Récupérer le client créé
+        $client = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}colis224_clients WHERE id = %d",
+            $client_id
+        ));
+
+        wp_send_json_success(array(
+            'message' => '✅ Client créé avec succès',
+            'client' => $client
+        ));
+    }
+
+    /**
+     * AJAX: Upload de photos
+     */
+    public function ajax_upload_photos() {
+        // Vérifier le nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_agent_portal')) {
+            wp_send_json_error(array('message' => 'Vérification de sécurité échouée'));
+            return;
+        }
+
+        // Vérifier les permissions
+        if (!$this->is_agent()) {
+            wp_send_json_error(array('message' => '⛔ Accès refusé'));
+            return;
+        }
+
+        // Vérifier qu'un fichier a été uploadé
+        if (empty($_FILES['file'])) {
+            wp_send_json_error(array('message' => 'Aucun fichier fourni'));
+            return;
+        }
+
+        // Utiliser la fonction WordPress pour gérer l'upload
+        require_once(ABSPATH . 'wp-admin/includes/file.php');
+
+        $uploadedfile = $_FILES['file'];
+        $upload_overrides = array('test_form' => false);
+
+        $movefile = wp_handle_upload($uploadedfile, $upload_overrides);
+
+        if ($movefile && !isset($movefile['error'])) {
+            wp_send_json_success(array(
+                'url' => $movefile['url'],
+                'file' => $movefile['file']
+            ));
+        } else {
+            wp_send_json_error(array('message' => $movefile['error']));
+        }
     }
 }
