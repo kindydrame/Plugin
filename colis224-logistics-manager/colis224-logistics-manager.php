@@ -118,6 +118,11 @@ class Colis224_Logistics_Manager {
             new Colis224_Partner_Portal();
         }
 
+        // Portail Agent (v2.18.2)
+        if (class_exists('Colis224_Agent_Portal')) {
+            new Colis224_Agent_Portal();
+        }
+
         // Système d'avis
         if (class_exists('Colis224_Reviews')) {
             new Colis224_Reviews();
@@ -262,6 +267,7 @@ class Colis224_Logistics_Manager {
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-inventory-advanced.php'; // Gestion stock avancée
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-marketing.php';         // Marketing Automation
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-partner-portal.php';    // Portail Partenaire
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-agent-portal.php';      // Portail Agent (v2.18.2)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-workflows.php';         // Automatisation Workflows
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-multilang.php';         // Multi-langues
 
