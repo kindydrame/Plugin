@@ -28,6 +28,41 @@ class Colis224_Agent_Portal {
         add_action('wp_ajax_colis224_agent_search_clients', array($this, 'ajax_search_clients'));
         add_action('wp_ajax_colis224_agent_create_client', array($this, 'ajax_create_client'));
         add_action('wp_ajax_colis224_agent_upload_photos', array($this, 'ajax_upload_photos'));
+
+        // Enqueue scripts et styles
+        add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
+    }
+
+    /**
+     * Enqueue scripts et styles pour le portail agent
+     */
+    public function enqueue_scripts() {
+        // Seulement si on est sur une page avec le shortcode
+        global $post;
+        if (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'colis224_agent_portal')) {
+            // CSS
+            wp_enqueue_style(
+                'colis224-agent-portal',
+                COLIS224_PLUGIN_URL . 'assets/css/agent-portal.css',
+                array(),
+                COLIS224_VERSION
+            );
+
+            // JavaScript
+            wp_enqueue_script(
+                'colis224-agent-portal',
+                COLIS224_PLUGIN_URL . 'assets/js/agent-portal.js',
+                array('jquery'),
+                COLIS224_VERSION,
+                true
+            );
+
+            // Localize script pour AJAX
+            wp_localize_script('colis224-agent-portal', 'colis224_ajax', array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('colis224_agent_portal')
+            ));
+        }
     }
 
     /**
