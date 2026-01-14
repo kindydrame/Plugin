@@ -1,0 +1,261 @@
+/**
+ * Modales de Confirmation
+ * Version 2.16.0 - Sprint 6
+ */
+
+/* Overlay de la modale */
+.colis224-confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 999998;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.colis224-confirm-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+/* Modale */
+.colis224-confirm-modal {
+    background: white;
+    border-radius: 16px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9) translateY(-20px);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.colis224-confirm-overlay.active .colis224-confirm-modal {
+    transform: scale(1) translateY(0);
+}
+
+/* En-tête de la modale */
+.colis224-confirm-header {
+    padding: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.colis224-confirm-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 24px;
+}
+
+.colis224-confirm-icon.warning {
+    background: #fef3c7;
+    color: #f59e0b;
+}
+
+.colis224-confirm-icon.danger {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.colis224-confirm-icon.info {
+    background: #dbeafe;
+    color: #3b82f6;
+}
+
+.colis224-confirm-icon.success {
+    background: #d1fae5;
+    color: #10b981;
+}
+
+.colis224-confirm-text {
+    flex: 1;
+}
+
+.colis224-confirm-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 8px 0;
+}
+
+.colis224-confirm-message {
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Détails supplémentaires */
+.colis224-confirm-details {
+    padding: 0 24px 16px 88px;
+}
+
+.colis224-confirm-detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #f9fafb;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.colis224-confirm-detail-label {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.colis224-confirm-detail-value {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+/* Pied de page avec actions */
+.colis224-confirm-footer {
+    padding: 16px 24px;
+    background: #f9fafb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.colis224-confirm-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.colis224-confirm-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.colis224-confirm-btn-cancel {
+    background: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.colis224-confirm-btn-cancel:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.colis224-confirm-btn-confirm {
+    background: #3b82f6;
+    color: white;
+}
+
+.colis224-confirm-btn-confirm:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.colis224-confirm-btn-confirm.danger {
+    background: #ef4444;
+}
+
+.colis224-confirm-btn-confirm.danger:hover {
+    background: #dc2626;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.colis224-confirm-btn-confirm.warning {
+    background: #f59e0b;
+}
+
+.colis224-confirm-btn-confirm.warning:hover {
+    background: #d97706;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Animation de chargement sur le bouton */
+.colis224-confirm-btn.loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.colis224-confirm-btn.loading::after {
+    content: '';
+    width: 14px;
+    height: 14px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Checkbox "Ne plus me demander" */
+.colis224-confirm-checkbox {
+    padding: 0 24px 16px 88px;
+}
+
+.colis224-confirm-checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #6b7280;
+    cursor: pointer;
+    user-select: none;
+}
+
+.colis224-confirm-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .colis224-confirm-modal {
+        max-width: 95%;
+        margin: 20px;
+    }
+
+    .colis224-confirm-header {
+        padding: 20px;
+    }
+
+    .colis224-confirm-details,
+    .colis224-confirm-checkbox {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .colis224-confirm-footer {
+        flex-direction: column-reverse;
+    }
+
+    .colis224-confirm-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
