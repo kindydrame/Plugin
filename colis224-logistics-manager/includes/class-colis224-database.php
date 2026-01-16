@@ -42,11 +42,17 @@ class Colis224_Database {
             balance decimal(15,2) DEFAULT 0.00,
             discount_rate decimal(5,2) DEFAULT 0.00,
             notes text DEFAULT NULL,
+            validation_status enum('draft','pending','validated','rejected') DEFAULT 'pending',
+            created_by bigint(20) UNSIGNED DEFAULT NULL,
+            validated_by bigint(20) UNSIGNED DEFAULT NULL,
+            validated_at datetime DEFAULT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
             KEY phone (phone),
-            KEY email (email)
+            KEY email (email),
+            KEY validation_status (validation_status),
+            KEY created_by (created_by)
         ) $charset_collate;";
         dbDelta($sql_clients);
 
@@ -118,13 +124,19 @@ class Colis224_Database {
             driver_id bigint(20) UNSIGNED DEFAULT NULL,
             photos text DEFAULT NULL,
             notes text DEFAULT NULL,
+            validation_status enum('draft','pending','validated','rejected') DEFAULT 'pending',
+            created_by bigint(20) UNSIGNED DEFAULT NULL,
+            validated_by bigint(20) UNSIGNED DEFAULT NULL,
+            validated_at datetime DEFAULT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
             UNIQUE KEY tracking_number (tracking_number),
             KEY client_id (client_id),
             KEY status (status),
-            KEY payment_status (payment_status)
+            KEY payment_status (payment_status),
+            KEY validation_status (validation_status),
+            KEY created_by (created_by)
         ) $charset_collate;";
         dbDelta($sql_parcels);
 
@@ -908,7 +920,69 @@ class Colis224_Database {
                 $wpdb->query("ALTER TABLE $table_parcels ADD INDEX idx_batch_id (batch_id)");
             }
         }
-        
+
+        // ===== MIGRATION v2.18.3: Ajouter les colonnes de validation =====
+
+        // Migration pour la table colis224_parcels
+        if ($table_exists) {
+            // Vérifier et ajouter validation_status
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_parcels LIKE 'validation_status'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_parcels ADD COLUMN validation_status enum('draft','pending','validated','rejected') DEFAULT 'pending' AFTER notes");
+                $wpdb->query("ALTER TABLE $table_parcels ADD INDEX idx_validation_status (validation_status)");
+            }
+
+            // Vérifier et ajouter created_by
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_parcels LIKE 'created_by'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_parcels ADD COLUMN created_by bigint(20) UNSIGNED DEFAULT NULL AFTER validation_status");
+                $wpdb->query("ALTER TABLE $table_parcels ADD INDEX idx_created_by (created_by)");
+            }
+
+            // Vérifier et ajouter validated_by
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_parcels LIKE 'validated_by'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_parcels ADD COLUMN validated_by bigint(20) UNSIGNED DEFAULT NULL AFTER created_by");
+            }
+
+            // Vérifier et ajouter validated_at
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_parcels LIKE 'validated_at'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_parcels ADD COLUMN validated_at datetime DEFAULT NULL AFTER validated_by");
+            }
+        }
+
+        // Migration pour la table colis224_clients
+        $table_clients = $wpdb->prefix . 'colis224_clients';
+        $table_exists_clients = $wpdb->get_var("SHOW TABLES LIKE '$table_clients'") === $table_clients;
+        if ($table_exists_clients) {
+            // Vérifier et ajouter validation_status
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_clients LIKE 'validation_status'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_clients ADD COLUMN validation_status enum('draft','pending','validated','rejected') DEFAULT 'pending' AFTER notes");
+                $wpdb->query("ALTER TABLE $table_clients ADD INDEX idx_validation_status (validation_status)");
+            }
+
+            // Vérifier et ajouter created_by
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_clients LIKE 'created_by'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_clients ADD COLUMN created_by bigint(20) UNSIGNED DEFAULT NULL AFTER validation_status");
+                $wpdb->query("ALTER TABLE $table_clients ADD INDEX idx_created_by (created_by)");
+            }
+
+            // Vérifier et ajouter validated_by
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_clients LIKE 'validated_by'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_clients ADD COLUMN validated_by bigint(20) UNSIGNED DEFAULT NULL AFTER created_by");
+            }
+
+            // Vérifier et ajouter validated_at
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_clients LIKE 'validated_at'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_clients ADD COLUMN validated_at datetime DEFAULT NULL AFTER validated_by");
+            }
+        }
+
         // Créer les données par défaut (catégories, pays, modes de transport)
         self::insert_default_data();
         

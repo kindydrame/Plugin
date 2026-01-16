@@ -395,13 +395,136 @@ class Colis224_Clients {
         <?php
     }
 
+    /**
+     * Afficher l'écran de confirmation avant validation finale
+     */
+    private static function display_client_confirmation() {
+        ?>
+        <div class="wrap colis224-wrap">
+            <h1 class="colis224-title">
+                <span class="dashicons dashicons-visibility"></span>
+                Confirmation - Vérifiez les informations
+            </h1>
+
+            <div class="colis224-card" style="background: #f0f8ff; border-left: 4px solid #2271b1;">
+                <div style="background: #2271b1; color: white; padding: 15px; margin: -20px -20px 20px -20px; border-radius: 8px 8px 0 0;">
+                    <h2 style="margin: 0; color: white;">
+                        <span class="dashicons dashicons-info" style="vertical-align: middle;"></span>
+                        📋 Résumé du Client - Vérifiez Avant de Valider
+                    </h2>
+                    <p style="margin: 10px 0 0 0; opacity: 0.9;">Une fois validé, ces informations seront enregistrées.</p>
+                </div>
+
+                <div class="colis224-form-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <!-- Informations Générales -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-admin-users"></span> Informations Générales
+                        </h3>
+                        <p><strong>Type:</strong> <?php echo esc_html(sanitize_text_field($_POST['type'])); ?></p>
+                        <p><strong>Nom:</strong> <?php echo esc_html(sanitize_text_field($_POST['name'])); ?></p>
+                        <?php if (!empty($_POST['company_name'])): ?>
+                        <p><strong>Nom de l'entreprise:</strong> <?php echo esc_html(sanitize_text_field($_POST['company_name'])); ?></p>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Coordonnées -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-phone"></span> Coordonnées
+                        </h3>
+                        <p><strong>Téléphone:</strong> <?php echo esc_html(sanitize_text_field($_POST['phone'])); ?></p>
+                        <p><strong>Email:</strong> <?php echo !empty($_POST['email']) ? esc_html(sanitize_email($_POST['email'])) : 'N/A'; ?></p>
+                        <p><strong>Adresse:</strong> <?php echo !empty($_POST['address']) ? esc_html(sanitize_textarea_field($_POST['address'])) : 'N/A'; ?></p>
+                    </div>
+
+                    <!-- Informations Financières -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-money-alt"></span> Informations Financières
+                        </h3>
+                        <p><strong>Taux de remise:</strong> <?php echo esc_html(floatval($_POST['discount_rate'])); ?> %</p>
+                        <p><strong>Solde:</strong> <?php echo esc_html(number_format(floatval($_POST['balance']), 0, ',', ' ')); ?> GNF</p>
+                    </div>
+
+                    <!-- Notes -->
+                    <?php if (!empty($_POST['notes'])): ?>
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-edit"></span> Notes
+                        </h3>
+                        <p><?php echo nl2br(esc_html(sanitize_textarea_field($_POST['notes']))); ?></p>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Formulaires pour les deux actions -->
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd; display: flex; gap: 20px; justify-content: center;">
+                    <!-- Formulaire pour Modifier -->
+                    <form method="post" action="?page=colis224-clients&action=add" style="display: inline;">
+                        <?php
+                        // Réinjecter toutes les données POST dans des champs cachés
+                        foreach ($_POST as $key => $value) {
+                            if ($key !== 'colis224_confirmed' && !is_array($value)) {
+                                echo '<input type="hidden" name="' . esc_attr($key) . '" value="' . esc_attr($value) . '">';
+                            }
+                        }
+                        ?>
+                        <button type="submit" class="button button-secondary" style="padding: 15px 40px; font-size: 16px; height: auto;">
+                            <span class="dashicons dashicons-edit" style="vertical-align: middle;"></span>
+                            ✏️ Modifier
+                        </button>
+                    </form>
+
+                    <!-- Formulaire pour Valider -->
+                    <form method="post" action="" style="display: inline;">
+                        <?php
+                        // Réinjecter toutes les données POST dans des champs cachés
+                        foreach ($_POST as $key => $value) {
+                            if (!is_array($value)) {
+                                echo '<input type="hidden" name="' . esc_attr($key) . '" value="' . esc_attr($value) . '">';
+                            }
+                        }
+                        ?>
+                        <input type="hidden" name="colis224_confirmed" value="1">
+                        <button type="submit" class="button button-primary" style="padding: 15px 40px; font-size: 16px; height: auto; background: #00a32a; border-color: #00a32a;">
+                            <span class="dashicons dashicons-yes-alt" style="vertical-align: middle;"></span>
+                            ✅ Valider et Enregistrer
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
     private static function save_client() {
         if (!isset($_POST['colis224_client_nonce']) || !wp_verify_nonce($_POST['colis224_client_nonce'], 'colis224_client_action')) {
             wp_die('Erreur de sécurité');
         }
 
+        // Vérifier si l'utilisateur a confirmé (étape 2) ou si c'est la première soumission (étape 1)
+        $is_confirmed = isset($_POST['colis224_confirmed']) && $_POST['colis224_confirmed'] === '1';
+
+        // Si pas encore confirmé, afficher l'écran de confirmation
+        if (!$is_confirmed) {
+            self::display_client_confirmation();
+            return;
+        }
+
         global $wpdb;
         $table_clients = $wpdb->prefix . 'colis224_clients';
+
+        // Obtenir l'utilisateur actuel et son rôle
+        $current_user = wp_get_current_user();
+        $user_role = Colis224_Permissions::get_user_colis224_role($current_user->ID);
+
+        // Déterminer le statut de validation basé sur le rôle
+        // Les admins créent des clients pré-validés, les agents doivent attendre validation
+        $validation_status = 'validated'; // Par défaut pour admin
+        if ($user_role === 'colis224_agent' || in_array('editor', $current_user->roles) || in_array('author', $current_user->roles)) {
+            $validation_status = 'pending'; // Les agents, éditeurs et auteurs doivent attendre validation
+        }
 
         $data = array(
             'type' => sanitize_text_field($_POST['type']),
@@ -412,15 +535,31 @@ class Colis224_Clients {
             'address' => sanitize_textarea_field($_POST['address']),
             'discount_rate' => floatval($_POST['discount_rate']),
             'balance' => floatval($_POST['balance']),
-            'notes' => sanitize_textarea_field($_POST['notes'])
+            'notes' => sanitize_textarea_field($_POST['notes']),
+            'created_by' => $current_user->ID,
+            'validation_status' => $validation_status
         );
+
+        // Si admin crée le client, le marquer comme auto-validé
+        if ($validation_status === 'validated') {
+            $data['validated_by'] = $current_user->ID;
+            $data['validated_at'] = current_time('mysql');
+        }
 
         $result = $wpdb->insert($table_clients, $data);
 
         if ($result) {
-            echo '<div class="notice notice-success is-dismissible"><p>Client enregistré avec succès!</p></div>';
+            // Message de succès adapté au statut de validation
+            if ($validation_status === 'pending') {
+                echo '<div class="notice notice-info is-dismissible">';
+                echo '<p>✅ Client enregistré avec succès !</p>';
+                echo '<p>⏳ <strong>En attente de validation</strong> par un administrateur. Le client sera visible dans la liste une fois approuvé.</p>';
+                echo '</div>';
+            } else {
+                echo '<div class="notice notice-success is-dismissible"><p>✅ Client enregistré et validé avec succès !</p></div>';
+            }
         } else {
-            echo '<div class="notice notice-error is-dismissible"><p>Erreur lors de l\'enregistrement du client.</p></div>';
+            echo '<div class="notice notice-error is-dismissible"><p>❌ Erreur lors de l\'enregistrement du client.</p></div>';
         }
     }
 
@@ -432,6 +571,33 @@ class Colis224_Clients {
         global $wpdb;
         $table_clients = $wpdb->prefix . 'colis224_clients';
         $client_id = intval($_POST['client_id']);
+
+        // Récupérer le client actuel pour vérifier le statut de validation
+        $current_client = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_clients WHERE id = %d", $client_id));
+
+        if (!$current_client) {
+            echo '<div class="notice notice-error is-dismissible"><p>❌ Client introuvable.</p></div>';
+            return;
+        }
+
+        // Vérifier le rôle de l'utilisateur
+        $current_user = wp_get_current_user();
+        $user_role = Colis224_Permissions::get_user_colis224_role($current_user->ID);
+
+        // RESTRICTIONS AGENTS / EDITORS / AUTHORS (v2.18.3)
+        $is_agent = ($user_role === 'colis224_agent') || in_array('editor', $current_user->roles) || in_array('author', $current_user->roles);
+        $is_validated = ($current_client->validation_status === 'validated');
+
+        // Bloquer TOUTE modification pour les agents/éditeurs/auteurs après validation admin
+        if ($is_agent && $is_validated) {
+            echo '<div class="notice notice-error is-dismissible" style="border-left-color: #dc3545;">';
+            echo '<p><strong>🔒 MODIFICATION INTERDITE</strong></p>';
+            echo '<p style="font-size: 14px;">Ce client a été <strong>validé par un administrateur</strong>. En tant qu\'agent/éditeur, vous ne pouvez plus le modifier.</p>';
+            echo '<p style="font-size: 13px; color: #666;">📌 <em>Les clients validés sont verrouillés pour garantir l\'intégrité des données.</em></p>';
+            echo '<p style="font-size: 13px;">👉 Contactez un administrateur si vous devez effectuer des modifications.</p>';
+            echo '</div>';
+            return;
+        }
 
         $data = array(
             'type' => sanitize_text_field($_POST['type']),
@@ -448,22 +614,36 @@ class Colis224_Clients {
         $result = $wpdb->update($table_clients, $data, array('id' => $client_id));
 
         if ($result !== false) {
-            echo '<div class="notice notice-success is-dismissible"><p>Client mis à jour avec succès!</p></div>';
+            echo '<div class="notice notice-success is-dismissible"><p>✅ Client mis à jour avec succès !</p></div>';
         } else {
-            echo '<div class="notice notice-error is-dismissible"><p>Erreur lors de la mise à jour.</p></div>';
+            echo '<div class="notice notice-error is-dismissible"><p>❌ Erreur lors de la mise à jour.</p></div>';
         }
     }
 
     private static function delete_client($client_id) {
         global $wpdb;
-        $table_clients = $wpdb->prefix . 'colis224_clients';
 
+        // Vérifier le rôle de l'utilisateur - seuls les administrateurs peuvent supprimer (v2.18.3)
+        $current_user = wp_get_current_user();
+        $is_admin = in_array('administrator', $current_user->roles) || current_user_can('manage_options');
+
+        if (!$is_admin) {
+            echo '<div class="notice notice-error is-dismissible" style="border-left-color: #dc3545;">';
+            echo '<p><strong>🚫 SUPPRESSION INTERDITE</strong></p>';
+            echo '<p style="font-size: 14px;">Seuls les <strong>administrateurs</strong> peuvent supprimer des clients.</p>';
+            echo '<p style="font-size: 13px; color: #666;">📌 <em>Cette restriction garantit l\'intégrité des données.</em></p>';
+            echo '<p style="font-size: 13px;">👉 Contactez un administrateur si vous devez supprimer ce client.</p>';
+            echo '</div>';
+            return;
+        }
+
+        $table_clients = $wpdb->prefix . 'colis224_clients';
         $result = $wpdb->delete($table_clients, array('id' => intval($client_id)));
 
         if ($result) {
-            echo '<div class="notice notice-success is-dismissible"><p>Client supprimé avec succès!</p></div>';
+            echo '<div class="notice notice-success is-dismissible"><p>✅ Client supprimé avec succès !</p></div>';
         } else {
-            echo '<div class="notice notice-error is-dismissible"><p>Erreur lors de la suppression.</p></div>';
+            echo '<div class="notice notice-error is-dismissible"><p>❌ Erreur lors de la suppression.</p></div>';
         }
     }
 

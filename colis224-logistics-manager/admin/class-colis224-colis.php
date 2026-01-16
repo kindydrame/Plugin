@@ -986,11 +986,200 @@ class Colis224_Parcels {
     }
 
     /**
+     * Afficher l'écran de confirmation avant validation finale
+     */
+    private static function display_parcel_confirmation() {
+        global $wpdb;
+
+        // Récupérer les noms depuis les IDs pour l'affichage
+        $client_name = '';
+        if (!empty($_POST['client_id'])) {
+            $client = $wpdb->get_row($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}colis224_clients WHERE id = %d",
+                intval($_POST['client_id'])
+            ));
+            $client_name = $client ? $client->name : 'N/A';
+        }
+
+        $origin_country = '';
+        if (!empty($_POST['origin_country_id'])) {
+            $country = $wpdb->get_row($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}colis224_countries WHERE id = %d",
+                intval($_POST['origin_country_id'])
+            ));
+            $origin_country = $country ? $country->name : 'N/A';
+        }
+
+        $destination_country = '';
+        if (!empty($_POST['destination_country_id'])) {
+            $country = $wpdb->get_row($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}colis224_countries WHERE id = %d",
+                intval($_POST['destination_country_id'])
+            ));
+            $destination_country = $country ? $country->name : 'N/A';
+        }
+
+        $transport_mode = '';
+        if (!empty($_POST['transport_mode_id'])) {
+            $transport = $wpdb->get_row($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}colis224_transport_modes WHERE id = %d",
+                intval($_POST['transport_mode_id'])
+            ));
+            $transport_mode = $transport ? $transport->name : 'N/A';
+        }
+
+        $category = '';
+        if (!empty($_POST['category_id'])) {
+            $cat = $wpdb->get_row($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}colis224_parcel_categories WHERE id = %d",
+                intval($_POST['category_id'])
+            ));
+            $category = $cat ? $cat->name : 'N/A';
+        }
+
+        $tracking_number = !empty($_POST['tracking_number']) ? sanitize_text_field($_POST['tracking_number']) : '[Sera généré automatiquement]';
+
+        ?>
+        <div class="wrap colis224-wrap">
+            <h1 class="colis224-title">
+                <span class="dashicons dashicons-visibility"></span>
+                Confirmation - Vérifiez les informations
+            </h1>
+
+            <div class="colis224-card" style="background: #f0f8ff; border-left: 4px solid #2271b1;">
+                <div style="background: #2271b1; color: white; padding: 15px; margin: -20px -20px 20px -20px; border-radius: 8px 8px 0 0;">
+                    <h2 style="margin: 0; color: white;">
+                        <span class="dashicons dashicons-info" style="vertical-align: middle;"></span>
+                        📋 Résumé du Colis - Vérifiez Avant de Valider
+                    </h2>
+                    <p style="margin: 10px 0 0 0; opacity: 0.9;">Une fois validé, ces informations seront enregistrées.</p>
+                </div>
+
+                <div class="colis224-form-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <!-- Informations Client -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-admin-users"></span> Informations Client
+                        </h3>
+                        <p><strong>Client:</strong> <?php echo esc_html($client_name ?: 'Non sélectionné'); ?></p>
+                        <p><strong>Expéditeur:</strong> <?php echo esc_html(sanitize_text_field($_POST['sender_name'])); ?></p>
+                    </div>
+
+                    <!-- Informations Destinataire -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-location"></span> Destinataire
+                        </h3>
+                        <p><strong>Nom:</strong> <?php echo esc_html(sanitize_text_field($_POST['recipient_name'])); ?></p>
+                        <p><strong>Téléphone:</strong> <?php echo esc_html(sanitize_text_field($_POST['recipient_phone'])); ?></p>
+                        <p><strong>Adresse:</strong> <?php echo esc_html(sanitize_textarea_field($_POST['recipient_address'])); ?></p>
+                    </div>
+
+                    <!-- Informations Colis -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-archive"></span> Détails du Colis
+                        </h3>
+                        <p><strong>Numéro de suivi:</strong> <?php echo esc_html($tracking_number); ?></p>
+                        <p><strong>Pays origine:</strong> <?php echo esc_html($origin_country); ?></p>
+                        <p><strong>Pays destination:</strong> <?php echo esc_html($destination_country); ?></p>
+                        <p><strong>Mode de transport:</strong> <?php echo esc_html($transport_mode); ?></p>
+                        <p><strong>Catégorie:</strong> <?php echo esc_html($category); ?></p>
+                        <p><strong>Poids:</strong> <?php echo esc_html(floatval($_POST['weight'])); ?> kg</p>
+                    </div>
+
+                    <!-- Informations Financières -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-money-alt"></span> Informations Financières
+                        </h3>
+                        <p><strong>Prix unitaire:</strong> <?php echo esc_html(number_format(floatval($_POST['unit_price']), 0, ',', ' ')); ?> <?php echo esc_html(sanitize_text_field($_POST['currency'])); ?></p>
+                        <p><strong>Remise:</strong> <?php echo esc_html(floatval($_POST['discount_value'])); ?> (<?php echo esc_html(sanitize_text_field($_POST['discount_type'])); ?>)</p>
+                        <p><strong>Montant total:</strong> <?php echo esc_html(number_format(floatval($_POST['total_amount']), 0, ',', ' ')); ?> <?php echo esc_html(sanitize_text_field($_POST['currency'])); ?></p>
+                        <p><strong>Montant payé:</strong> <?php echo esc_html(number_format(floatval($_POST['paid_amount']), 0, ',', ' ')); ?> <?php echo esc_html(sanitize_text_field($_POST['currency'])); ?></p>
+                        <p><strong>Reste à payer:</strong> <?php echo esc_html(number_format(floatval($_POST['total_amount']) - floatval($_POST['paid_amount']), 0, ',', ' ')); ?> <?php echo esc_html(sanitize_text_field($_POST['currency'])); ?></p>
+                        <p><strong>Méthode de paiement:</strong> <?php echo esc_html(sanitize_text_field($_POST['payment_method'])); ?></p>
+                        <p><strong>Statut paiement:</strong> <?php echo esc_html(sanitize_text_field($_POST['payment_status'])); ?></p>
+                    </div>
+
+                    <!-- Statut et Dates -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-calendar-alt"></span> Statut et Dates
+                        </h3>
+                        <p><strong>Statut:</strong> <?php echo esc_html(sanitize_text_field($_POST['status'])); ?></p>
+                        <p><strong>Date de réception:</strong> <?php echo !empty($_POST['reception_date']) ? esc_html(sanitize_text_field($_POST['reception_date'])) : 'N/A'; ?></p>
+                        <p><strong>Date d'expédition:</strong> <?php echo !empty($_POST['shipping_date']) ? esc_html(sanitize_text_field($_POST['shipping_date'])) : 'N/A'; ?></p>
+                        <p><strong>Date de livraison:</strong> <?php echo !empty($_POST['delivery_date']) ? esc_html(sanitize_text_field($_POST['delivery_date'])) : 'N/A'; ?></p>
+                        <p><strong>Livraison estimée:</strong> <?php echo !empty($_POST['estimated_delivery_date']) ? esc_html(sanitize_text_field($_POST['estimated_delivery_date'])) : 'N/A'; ?></p>
+                    </div>
+
+                    <!-- Notes -->
+                    <?php if (!empty($_POST['notes'])): ?>
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-edit"></span> Notes
+                        </h3>
+                        <p><?php echo nl2br(esc_html(sanitize_textarea_field($_POST['notes']))); ?></p>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Formulaires pour les deux actions -->
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd; display: flex; gap: 20px; justify-content: center;">
+                    <!-- Formulaire pour Modifier -->
+                    <form method="post" action="?page=colis224-parcels&action=add" style="display: inline;">
+                        <?php
+                        // Réinjecter toutes les données POST dans des champs cachés
+                        foreach ($_POST as $key => $value) {
+                            if ($key !== 'colis224_confirmed' && !is_array($value)) {
+                                echo '<input type="hidden" name="' . esc_attr($key) . '" value="' . esc_attr($value) . '">';
+                            }
+                        }
+                        ?>
+                        <button type="submit" class="button button-secondary" style="padding: 15px 40px; font-size: 16px; height: auto;">
+                            <span class="dashicons dashicons-edit" style="vertical-align: middle;"></span>
+                            ✏️ Modifier
+                        </button>
+                    </form>
+
+                    <!-- Formulaire pour Valider -->
+                    <form method="post" action="" style="display: inline;">
+                        <?php
+                        // Réinjecter toutes les données POST dans des champs cachés
+                        foreach ($_POST as $key => $value) {
+                            if (!is_array($value)) {
+                                echo '<input type="hidden" name="' . esc_attr($key) . '" value="' . esc_attr($value) . '">';
+                            }
+                        }
+                        ?>
+                        <input type="hidden" name="colis224_confirmed" value="1">
+                        <button type="submit" class="button button-primary" style="padding: 15px 40px; font-size: 16px; height: auto; background: #00a32a; border-color: #00a32a;">
+                            <span class="dashicons dashicons-yes-alt" style="vertical-align: middle;"></span>
+                            ✅ Valider et Enregistrer
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
      * Enregistrer un nouveau colis
      */
     private static function save_parcel() {
         if (!isset($_POST['colis224_parcel_nonce']) || !wp_verify_nonce($_POST['colis224_parcel_nonce'], 'colis224_parcel_action')) {
             wp_die('Erreur de sécurité');
+        }
+
+        // Vérifier si l'utilisateur a confirmé (étape 2) ou si c'est la première soumission (étape 1)
+        $is_confirmed = isset($_POST['colis224_confirmed']) && $_POST['colis224_confirmed'] === '1';
+
+        // Si pas encore confirmé, afficher l'écran de confirmation
+        if (!$is_confirmed) {
+            self::display_parcel_confirmation();
+            return;
         }
 
         global $wpdb;
@@ -1074,10 +1263,10 @@ class Colis224_Parcels {
         $user_role = Colis224_Permissions::get_user_colis224_role($current_user->ID);
 
         // Déterminer le statut de validation basé sur le rôle
-        // Les admins créent des colis pré-approuvés, les agents doivent attendre validation
-        $validation_status = 'approved'; // Par défaut
-        if ($user_role === 'colis224_agent') {
-            $validation_status = 'pending'; // Les agents doivent attendre validation
+        // Les admins créent des colis pré-validés, les agents doivent attendre validation
+        $validation_status = 'validated'; // Par défaut pour admin
+        if ($user_role === 'colis224_agent' || in_array('editor', $current_user->roles) || in_array('author', $current_user->roles)) {
+            $validation_status = 'pending'; // Les agents, éditeurs et auteurs doivent attendre validation
         }
 
         $data = array(
@@ -1114,7 +1303,7 @@ class Colis224_Parcels {
         );
 
         // Si admin crée le colis, le marquer comme auto-validé
-        if ($validation_status === 'approved') {
+        if ($validation_status === 'validated') {
             $data['validated_by'] = $current_user->ID;
             $data['validated_at'] = current_time('mysql');
         }
@@ -1200,63 +1389,25 @@ class Colis224_Parcels {
             }
         }
 
-        // RESTRICTIONS AGENTS (v2.11.0)
-        $is_agent = ($user_role === 'colis224_agent');
-        $is_validated = ($current_parcel->validation_status === 'approved');
+        // RESTRICTIONS AGENTS / EDITORS / AUTHORS (v2.18.3)
+        $is_agent = ($user_role === 'colis224_agent') || in_array('editor', $current_user->roles) || in_array('author', $current_user->roles);
+        $is_validated = ($current_parcel->validation_status === 'validated');
+
+        // Bloquer TOUTE modification pour les agents/éditeurs/auteurs après validation admin
+        if ($is_agent && $is_validated) {
+            echo '<div class="notice notice-error is-dismissible" style="border-left-color: #dc3545;">';
+            echo '<p><strong>🔒 MODIFICATION INTERDITE</strong></p>';
+            echo '<p style="font-size: 14px;">Ce colis a été <strong>validé par un administrateur</strong>. En tant qu\'agent/éditeur, vous ne pouvez plus le modifier.</p>';
+            echo '<p style="font-size: 13px; color: #666;">📌 <em>Les colis validés sont verrouillés pour garantir l\'intégrité des données.</em></p>';
+            echo '<p style="font-size: 13px;">👉 Contactez un administrateur si vous devez effectuer des modifications.</p>';
+            echo '</div>';
+            return;
+        }
 
         // Calcul du montant restant
         $total_amount = floatval($_POST['total_amount']);
         $paid_amount = floatval($_POST['paid_amount']);
         $remaining_amount = $total_amount - $paid_amount;
-
-        // Bloquer les modifications sensibles pour les agents après validation admin
-        if ($is_agent && $is_validated) {
-            // Vérifier si l'agent tente de modifier des champs interdits
-            $forbidden_changes = array();
-
-            // Montants interdits
-            if (abs($total_amount - $current_parcel->total_amount) > 0.01) {
-                $forbidden_changes[] = 'montant total';
-            }
-            if (abs(floatval($_POST['unit_price']) - $current_parcel->unit_price) > 0.01) {
-                $forbidden_changes[] = 'prix unitaire';
-            }
-            if (abs(floatval($_POST['discount_value']) - $current_parcel->discount_value) > 0.01) {
-                $forbidden_changes[] = 'remise';
-            }
-
-            // Paiement interdit
-            if (sanitize_text_field($_POST['payment_status']) !== $current_parcel->payment_status) {
-                $forbidden_changes[] = 'statut de paiement';
-            }
-            if (abs($paid_amount - $current_parcel->paid_amount) > 0.01) {
-                $forbidden_changes[] = 'montant payé';
-            }
-
-            // Si des modifications interdites sont détectées
-            if (!empty($forbidden_changes)) {
-                $fields_list = implode(', ', $forbidden_changes);
-                echo '<div class="notice notice-error is-dismissible">';
-                echo '<p><strong>❌ MODIFICATION REFUSÉE</strong></p>';
-                echo '<p>En tant qu\'agent, vous ne pouvez pas modifier ces champs après validation admin :</p>';
-                echo '<ul style="margin-left: 20px;">';
-                foreach ($forbidden_changes as $field) {
-                    echo '<li>' . esc_html($field) . '</li>';
-                }
-                echo '</ul>';
-                echo '<p>Contactez un administrateur pour effectuer ces modifications.</p>';
-                echo '</div>';
-                return;
-            }
-
-            // Forcer les valeurs d'origine pour les champs sensibles
-            $total_amount = $current_parcel->total_amount;
-            $paid_amount = $current_parcel->paid_amount;
-            $remaining_amount = $current_parcel->remaining_amount;
-            $_POST['unit_price'] = $current_parcel->unit_price;
-            $_POST['discount_value'] = $current_parcel->discount_value;
-            $_POST['payment_status'] = $current_parcel->payment_status;
-        }
 
         $data = array(
             'client_id' => !empty($_POST['client_id']) ? intval($_POST['client_id']) : null,
@@ -1320,14 +1471,28 @@ class Colis224_Parcels {
      */
     private static function delete_parcel($parcel_id) {
         global $wpdb;
-        $table_parcels = $wpdb->prefix . 'colis224_parcels';
 
+        // Vérifier le rôle de l'utilisateur - seuls les administrateurs peuvent supprimer (v2.18.3)
+        $current_user = wp_get_current_user();
+        $is_admin = in_array('administrator', $current_user->roles) || current_user_can('manage_options');
+
+        if (!$is_admin) {
+            echo '<div class="notice notice-error is-dismissible" style="border-left-color: #dc3545;">';
+            echo '<p><strong>🚫 SUPPRESSION INTERDITE</strong></p>';
+            echo '<p style="font-size: 14px;">Seuls les <strong>administrateurs</strong> peuvent supprimer des colis.</p>';
+            echo '<p style="font-size: 13px; color: #666;">📌 <em>Cette restriction garantit l\'intégrité des données.</em></p>';
+            echo '<p style="font-size: 13px;">👉 Contactez un administrateur si vous devez supprimer ce colis.</p>';
+            echo '</div>';
+            return;
+        }
+
+        $table_parcels = $wpdb->prefix . 'colis224_parcels';
         $result = $wpdb->delete($table_parcels, array('id' => intval($parcel_id)));
 
         if ($result) {
-            echo '<div class="notice notice-success is-dismissible"><p>Colis supprimé avec succès!</p></div>';
+            echo '<div class="notice notice-success is-dismissible"><p>✅ Colis supprimé avec succès !</p></div>';
         } else {
-            echo '<div class="notice notice-error is-dismissible"><p>Erreur lors de la suppression du colis.</p></div>';
+            echo '<div class="notice notice-error is-dismissible"><p>❌ Erreur lors de la suppression du colis.</p></div>';
         }
     }
 }
