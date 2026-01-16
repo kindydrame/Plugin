@@ -13,6 +13,34 @@ class Colis224_Agent_Portal {
     public function __construct() {
         add_action('init', array($this, 'register_shortcodes'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_assets'));
+        add_filter('login_redirect', array($this, 'custom_login_redirect'), 10, 3);
+    }
+
+    /**
+     * Redirection personnalisée après connexion
+     */
+    public function custom_login_redirect($redirect_to, $request, $user) {
+        // Vérifier si l'utilisateur a un rôle autorisé
+        if (isset($user->roles) && is_array($user->roles)) {
+            $allowed_roles = array('colis224_agent', 'colis224_manager', 'administrator', 'editor', 'author');
+
+            foreach ($allowed_roles as $role) {
+                if (in_array($role, $user->roles)) {
+                    // Si la demande vient de la page portail agent, y rediriger
+                    if (strpos($request, 'espace-agent') !== false) {
+                        return $request;
+                    }
+                    // Sinon, chercher la page espace-agent
+                    $agent_page = get_page_by_path('espace-agent');
+                    if ($agent_page) {
+                        return get_permalink($agent_page->ID);
+                    }
+                    break;
+                }
+            }
+        }
+
+        return $redirect_to;
     }
 
     /**
@@ -60,7 +88,9 @@ class Colis224_Agent_Portal {
 
         $is_agent = in_array('colis224_agent', $user_roles) ||
                     in_array('colis224_manager', $user_roles) ||
-                    in_array('administrator', $user_roles);
+                    in_array('administrator', $user_roles) ||
+                    in_array('editor', $user_roles) ||
+                    in_array('author', $user_roles);
 
         if (!$is_agent) {
             return $this->display_access_denied();
@@ -105,7 +135,7 @@ class Colis224_Agent_Portal {
                 <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
                     <p style="color: #999; font-size: 14px; margin: 0;">
                         <span class="dashicons dashicons-lock" style="vertical-align: middle;"></span>
-                        Connexion sécurisée réservée aux agents
+                        Connexion sécurisée réservée aux agents, éditeurs et administrateurs
                     </p>
                 </div>
 
@@ -183,7 +213,7 @@ class Colis224_Agent_Portal {
                     Vous n'avez pas les permissions nécessaires pour accéder à cet espace.
                 </p>
                 <p style="color: #856404; font-size: 14px; margin: 0;">
-                    Cet espace est réservé aux agents et gestionnaires Colis224.
+                    Cet espace est réservé aux agents, gestionnaires, éditeurs et administrateurs Colis224.
                 </p>
                 <div style="margin-top: 30px;">
                     <a href="<?php echo wp_logout_url(home_url()); ?>" style="display: inline-block; padding: 12px 30px; background: #ffc107; color: #856404; text-decoration: none; border-radius: 6px; font-weight: 600;">
