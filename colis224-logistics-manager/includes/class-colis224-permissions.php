@@ -74,6 +74,23 @@ class Colis224_Permissions {
             $admin->add_cap('colis224_view_parcels');
             $admin->add_cap('colis224_manage_clients');
         }
+
+        // Ajouter les capabilities aux éditeurs (v2.18.2.2)
+        $editor = get_role('editor');
+        if ($editor) {
+            $editor->add_cap('colis224_create_parcel');
+            $editor->add_cap('colis224_view_parcels');
+            $editor->add_cap('colis224_manage_clients');
+            $editor->add_cap('colis224_view_reports');
+        }
+
+        // Ajouter les capabilities aux auteurs (v2.18.2.2)
+        $author = get_role('author');
+        if ($author) {
+            $author->add_cap('colis224_create_parcel');
+            $author->add_cap('colis224_view_parcels');
+            $author->add_cap('colis224_manage_clients');
+        }
     }
 
     /**
