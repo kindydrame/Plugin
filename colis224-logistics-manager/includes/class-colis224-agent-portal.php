@@ -303,6 +303,3 @@ class Colis224_Agent_Portal {
         return ob_get_clean();
     }
 }
-
-// Initialiser la classe
-new Colis224_Agent_Portal();
