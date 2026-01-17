@@ -240,7 +240,7 @@ class Colis224_Parcels {
         $transport_modes = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}colis224_transport_modes ORDER BY name");
         $categories = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}colis224_parcel_categories ORDER BY name");
         $drivers = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}colis224_drivers WHERE is_active = 1 ORDER BY name");
-        $agents = $wpdb->get_results("SELECT id, name, role FROM {$wpdb->prefix}colis224_team WHERE is_active = 1 ORDER BY name");
+        $agents = $wpdb->get_results("SELECT id, name, role FROM {$wpdb->prefix}colis224_team_members WHERE is_active = 1 ORDER BY name");
 
         $is_edit = ($parcel !== null);
         $title = $is_edit ? 'Modifier le Colis' : 'Nouveau Colis';
