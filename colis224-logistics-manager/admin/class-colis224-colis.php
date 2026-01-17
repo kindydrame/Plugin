@@ -327,11 +327,29 @@ class Colis224_Parcels {
 
                         <!-- Nom expéditeur avec autocomplete -->
                         <div class="colis224-form-group">
-                            <label for="sender_name">Nom Expéditeur</label>
+                            <label for="sender_name">📤 Nom Expéditeur</label>
                             <input type="text" name="sender_name" id="sender_name" class="colis224-autocomplete-sender"
                                    placeholder="Tapez pour rechercher dans l'historique..."
                                    value="<?php echo $is_edit ? esc_attr($parcel->sender_name) : ''; ?>">
                             <small>Suggestions basées sur l'historique des expéditions</small>
+                        </div>
+
+                        <!-- Téléphone expéditeur -->
+                        <div class="colis224-form-group">
+                            <label for="sender_phone">📞 Téléphone Expéditeur</label>
+                            <input type="tel" name="sender_phone" id="sender_phone"
+                                   placeholder="+224 XXX XXX XXX"
+                                   value="<?php echo $is_edit ? esc_attr($parcel->sender_phone) : ''; ?>">
+                            <small>Numéro de contact de l'expéditeur</small>
+                        </div>
+
+                        <!-- Numéro de pièce d'identité -->
+                        <div class="colis224-form-group">
+                            <label for="sender_id_card">🪪 N° Pièce d'Identité</label>
+                            <input type="text" name="sender_id_card" id="sender_id_card"
+                                   placeholder="CNI / Passeport / Permis"
+                                   value="<?php echo $is_edit ? esc_attr($parcel->sender_id_card) : ''; ?>">
+                            <small>Pour vérification d'identité</small>
                         </div>
 
                         <!-- Nom destinataire avec autocomplete -->
@@ -546,6 +564,61 @@ class Colis224_Parcels {
                             <label for="paid_amount">Montant Payé</label>
                             <input type="number" name="paid_amount" id="paid_amount" step="0.01" min="0"
                                    value="<?php echo $is_edit ? esc_attr($parcel->paid_amount) : '0'; ?>">
+                        </div>
+
+                        <!-- Section Documents et Photos -->
+                        <div class="colis224-form-group colis224-full-width" style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                            <h3 style="margin-top: 0; color: #667eea;">
+                                <span class="dashicons dashicons-camera"></span> 📎 Documents et Photos
+                            </h3>
+
+                            <div class="colis224-form-grid">
+                                <!-- Photo du reçu -->
+                                <div class="colis224-form-group">
+                                    <label for="receipt_photo">📄 Photo du Reçu</label>
+                                    <input type="file" name="receipt_photo" id="receipt_photo" accept="image/*,.pdf">
+                                    <small style="display: block; margin-top: 5px;">
+                                        Formats acceptés: JPG, PNG, PDF (max 5MB)
+                                    </small>
+                                    <?php if ($is_edit && !empty($parcel->receipt_photo)): ?>
+                                    <div style="margin-top: 10px;">
+                                        <strong>Fichier actuel:</strong>
+                                        <a href="<?php echo esc_url(wp_get_upload_dir()['baseurl'] . '/colis224/receipts/' . basename($parcel->receipt_photo)); ?>" target="_blank">
+                                            📎 <?php echo esc_html(basename($parcel->receipt_photo)); ?>
+                                        </a>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <!-- Photos du colis -->
+                                <div class="colis224-form-group">
+                                    <label for="parcel_photos">📸 Photos du Colis</label>
+                                    <input type="file" name="parcel_photos[]" id="parcel_photos" accept="image/*" multiple>
+                                    <small style="display: block; margin-top: 5px;">
+                                        Vous pouvez sélectionner plusieurs photos (max 10MB total)
+                                    </small>
+                                    <?php if ($is_edit && !empty($parcel->photos)): ?>
+                                    <div style="margin-top: 10px;">
+                                        <strong>Photos actuelles:</strong>
+                                        <?php
+                                        $photos = maybe_unserialize($parcel->photos);
+                                        if (is_array($photos)):
+                                            foreach ($photos as $photo):
+                                        ?>
+                                        <div style="display: inline-block; margin: 5px;">
+                                            <a href="<?php echo esc_url(wp_get_upload_dir()['baseurl'] . '/colis224/parcels/' . basename($photo)); ?>" target="_blank">
+                                                <img src="<?php echo esc_url(wp_get_upload_dir()['baseurl'] . '/colis224/parcels/' . basename($photo)); ?>"
+                                                     style="max-width: 100px; max-height: 100px; border-radius: 4px; border: 2px solid #ddd;">
+                                            </a>
+                                        </div>
+                                        <?php
+                                            endforeach;
+                                        endif;
+                                        ?>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Notes -->
@@ -1299,6 +1372,8 @@ class Colis224_Parcels {
             'tracking_number' => $tracking_number,
             'client_id' => !empty($_POST['client_id']) ? intval($_POST['client_id']) : null,
             'sender_name' => sanitize_text_field($_POST['sender_name']),
+            'sender_phone' => !empty($_POST['sender_phone']) ? sanitize_text_field($_POST['sender_phone']) : null,
+            'sender_id_card' => !empty($_POST['sender_id_card']) ? sanitize_text_field($_POST['sender_id_card']) : null,
             'recipient_name' => sanitize_text_field($_POST['recipient_name']),
             'recipient_phone' => sanitize_text_field($_POST['recipient_phone']),
             'recipient_address' => sanitize_textarea_field($_POST['recipient_address']),
@@ -1440,6 +1515,8 @@ class Colis224_Parcels {
         $data = array(
             'client_id' => !empty($_POST['client_id']) ? intval($_POST['client_id']) : null,
             'sender_name' => sanitize_text_field($_POST['sender_name']),
+            'sender_phone' => !empty($_POST['sender_phone']) ? sanitize_text_field($_POST['sender_phone']) : null,
+            'sender_id_card' => !empty($_POST['sender_id_card']) ? sanitize_text_field($_POST['sender_id_card']) : null,
             'recipient_name' => sanitize_text_field($_POST['recipient_name']),
             'recipient_phone' => sanitize_text_field($_POST['recipient_phone']),
             'recipient_address' => sanitize_textarea_field($_POST['recipient_address']),
