@@ -235,11 +235,12 @@ class Colis224_Parcels {
         }
 
         // Récupération des données pour les listes déroulantes
-        $clients = $wpdb->get_results("SELECT id, name, phone FROM {$wpdb->prefix}colis224_clients ORDER BY name");
+        $clients = $wpdb->get_results("SELECT id, name, phone, email FROM {$wpdb->prefix}colis224_clients ORDER BY name");
         $countries = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}colis224_countries ORDER BY name");
         $transport_modes = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}colis224_transport_modes ORDER BY name");
         $categories = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}colis224_parcel_categories ORDER BY name");
         $drivers = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}colis224_drivers WHERE is_active = 1 ORDER BY name");
+        $agents = $wpdb->get_results("SELECT id, name, role FROM {$wpdb->prefix}colis224_team WHERE is_active = 1 ORDER BY name");
 
         $is_edit = ($parcel !== null);
         $title = $is_edit ? 'Modifier le Colis' : 'Nouveau Colis';
@@ -264,32 +265,57 @@ class Colis224_Parcels {
                     <?php endif; ?>
                     <?php wp_nonce_field('colis224_parcel_action', 'colis224_parcel_nonce'); ?>
 
-                    <div class="colis224-form-grid">
-                        <!-- Numéro de suivi -->
-                        <div class="colis224-form-group">
-                            <label for="tracking_number">Numéro de Suivi *</label>
-                            <input type="text" name="tracking_number" id="tracking_number"
-                                   value="<?php echo $is_edit ? esc_attr($parcel->tracking_number) : ''; ?>"
-                                   placeholder="PA + 4 derniers chiffres téléphone"
-                                   <?php echo !$is_edit ? '' : 'readonly'; ?> required>
-                            <?php if (!$is_edit): ?>
-                            <small>Laissez vide pour génération automatique ou saisissez manuellement</small>
-                            <?php endif; ?>
-                        </div>
+                    <!-- Section Identification -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                        <h2 style="color: white; margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px;">
+                            <span class="dashicons dashicons-id-alt" style="font-size: 28px;"></span>
+                            🆔 Identification du Colis
+                        </h2>
+                        <div class="colis224-form-grid" style="gap: 15px;">
+                            <!-- Numéro de suivi -->
+                            <div class="colis224-form-group">
+                                <label for="tracking_number" style="color: white; font-weight: 600;">
+                                    🔖 Numéro de Suivi *
+                                </label>
+                                <input type="text" name="tracking_number" id="tracking_number"
+                                       value="<?php echo $is_edit ? esc_attr($parcel->tracking_number) : ''; ?>"
+                                       placeholder="PA + 4 derniers chiffres téléphone"
+                                       style="background: rgba(255,255,255,0.95);"
+                                       <?php echo !$is_edit ? '' : 'readonly'; ?> required>
+                                <?php if (!$is_edit): ?>
+                                <small style="color: rgba(255,255,255,0.9);">⚡ Génération automatique si vide</small>
+                                <?php endif; ?>
+                            </div>
 
-                        <!-- Client avec autocomplete -->
-                        <div class="colis224-form-group">
-                            <label for="client_search">Client (recherche par nom ou téléphone)</label>
-                            <input type="text" id="client_search" class="colis224-autocomplete-input"
-                                   placeholder="Tapez un nom ou numéro de téléphone..."
-                                   value="<?php
-                                   if ($is_edit && $parcel->client_id) {
-                                       $client = $wpdb->get_row($wpdb->prepare("SELECT name, phone FROM {$wpdb->prefix}colis224_clients WHERE id = %d", $parcel->client_id));
-                                       if ($client) echo esc_attr($client->name . ' - ' . $client->phone);
-                                   }
-                                   ?>">
-                            <input type="hidden" name="client_id" id="client_id" value="<?php echo $is_edit ? esc_attr($parcel->client_id) : ''; ?>">
-                            <small>Commencez à taper pour rechercher un client existant</small>
+                            <!-- Client avec autocomplete -->
+                            <div class="colis224-form-group">
+                                <label for="client_search" style="color: white; font-weight: 600;">
+                                    👤 Client (recherche intelligente)
+                                </label>
+                                <input type="text" id="client_search" class="colis224-autocomplete-client"
+                                       placeholder="🔍 Tapez un nom, téléphone ou email..."
+                                       style="background: rgba(255,255,255,0.95);"
+                                       value="<?php
+                                       if ($is_edit && $parcel->client_id) {
+                                           $client = $wpdb->get_row($wpdb->prepare("SELECT name, phone, email FROM {$wpdb->prefix}colis224_clients WHERE id = %d", $parcel->client_id));
+                                           if ($client) echo esc_attr($client->name . ' - ' . $client->phone);
+                                       }
+                                       ?>">
+                                <input type="hidden" name="client_id" id="client_id" value="<?php echo $is_edit ? esc_attr($parcel->client_id) : ''; ?>">
+                                <small style="color: rgba(255,255,255,0.9);">💡 Auto-remplissage des informations</small>
+                            </div>
+
+                            <!-- Email du client -->
+                            <div class="colis224-form-group">
+                                <label for="client_email" style="color: white; font-weight: 600;">
+                                    📧 Email du Client
+                                </label>
+                                <input type="email" name="client_email" id="client_email"
+                                       placeholder="exemple@email.com"
+                                       style="background: rgba(255,255,255,0.95);"
+                                       value="<?php echo $is_edit ? esc_attr($parcel->client_email) : ''; ?>">
+                                <small style="color: rgba(255,255,255,0.9);">✉️ Pour notifications automatiques</small>
+                            </div>
                         </div>
                     </div>
 
@@ -623,8 +649,38 @@ class Colis224_Parcels {
 
                         <!-- Notes -->
                         <div class="colis224-form-group colis224-full-width">
-                            <label for="notes">Notes Internes</label>
-                            <textarea name="notes" id="notes" rows="3"><?php echo $is_edit ? esc_textarea($parcel->notes) : ''; ?></textarea>
+                            <label for="notes">📝 Notes Internes</label>
+                            <textarea name="notes" id="notes" rows="3" placeholder="Informations complémentaires..."><?php echo $is_edit ? esc_textarea($parcel->notes) : ''; ?></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Section Agent Enregistreur -->
+                    <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; margin-top: 20px;">
+                        <h3 style="color: white; margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px;">
+                            <span class="dashicons dashicons-businessman" style="font-size: 24px;"></span>
+                            👨‍💼 Traçabilité
+                        </h3>
+                        <div class="colis224-form-grid">
+                            <div class="colis224-form-group">
+                                <label for="recorded_by_agent_id" style="color: white; font-weight: 600;">
+                                    ✍️ Enregistré par (Agent)
+                                </label>
+                                <select name="recorded_by_agent_id" id="recorded_by_agent_id" style="background: rgba(255,255,255,0.95);">
+                                    <option value="">-- Sélectionner un agent --</option>
+                                    <?php foreach ($agents as $agent): ?>
+                                    <option value="<?php echo $agent->id; ?>"
+                                            <?php echo ($is_edit && $parcel->recorded_by_agent_id == $agent->id) ? 'selected' : ''; ?>>
+                                        <?php echo esc_html($agent->name); ?>
+                                        <?php if (!empty($agent->role)): ?>
+                                            (<?php echo esc_html($agent->role); ?>)
+                                        <?php endif; ?>
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small style="color: rgba(255,255,255,0.9);">
+                                    🔍 Pour identifier qui a créé ce colis
+                                </small>
+                            </div>
                         </div>
                     </div>
 
@@ -700,9 +756,24 @@ class Colis224_Parcels {
                     });
                 },
                 select: function(event, ui) {
+                    // Remplir l'ID et le champ de recherche
                     $('#client_id').val(ui.item.id);
                     $('#client_search').val(ui.item.label);
+
+                    // AUTO-REMPLISSAGE : Charger toutes les infos du client
+                    if (ui.item.email) {
+                        $('#client_email').val(ui.item.email);
+                    }
+
+                    // Charger les infos de fidélité
                     loadLoyaltyInfo(ui.item.id);
+
+                    // Afficher une notification visuelle
+                    $('#client_email').css('background-color', '#d4edda').delay(800).queue(function(next) {
+                        $(this).css('background-color', 'rgba(255,255,255,0.95)');
+                        next();
+                    });
+
                     return false;
                 },
                 focus: function(event, ui) {
@@ -1371,6 +1442,7 @@ class Colis224_Parcels {
         $data = array(
             'tracking_number' => $tracking_number,
             'client_id' => !empty($_POST['client_id']) ? intval($_POST['client_id']) : null,
+            'client_email' => !empty($_POST['client_email']) ? sanitize_email($_POST['client_email']) : null,
             'sender_name' => sanitize_text_field($_POST['sender_name']),
             'sender_phone' => !empty($_POST['sender_phone']) ? sanitize_text_field($_POST['sender_phone']) : null,
             'sender_id_card' => !empty($_POST['sender_id_card']) ? sanitize_text_field($_POST['sender_id_card']) : null,
@@ -1397,6 +1469,7 @@ class Colis224_Parcels {
             'paid_amount' => $paid_amount,
             'remaining_amount' => $remaining_amount,
             'driver_id' => !empty($_POST['driver_id']) ? intval($_POST['driver_id']) : null,
+            'recorded_by_agent_id' => !empty($_POST['recorded_by_agent_id']) ? intval($_POST['recorded_by_agent_id']) : null,
             'notes' => sanitize_textarea_field($_POST['notes']),
             // Nouveaux champs v2.11.0 (validation hiérarchique)
             'created_by' => $current_user->ID,
@@ -1514,6 +1587,7 @@ class Colis224_Parcels {
 
         $data = array(
             'client_id' => !empty($_POST['client_id']) ? intval($_POST['client_id']) : null,
+            'client_email' => !empty($_POST['client_email']) ? sanitize_email($_POST['client_email']) : null,
             'sender_name' => sanitize_text_field($_POST['sender_name']),
             'sender_phone' => !empty($_POST['sender_phone']) ? sanitize_text_field($_POST['sender_phone']) : null,
             'sender_id_card' => !empty($_POST['sender_id_card']) ? sanitize_text_field($_POST['sender_id_card']) : null,
@@ -1540,6 +1614,7 @@ class Colis224_Parcels {
             'paid_amount' => $paid_amount,
             'remaining_amount' => $remaining_amount,
             'driver_id' => !empty($_POST['driver_id']) ? intval($_POST['driver_id']) : null,
+            'recorded_by_agent_id' => !empty($_POST['recorded_by_agent_id']) ? intval($_POST['recorded_by_agent_id']) : null,
             'notes' => sanitize_textarea_field($_POST['notes'])
         );
 

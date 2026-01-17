@@ -98,6 +98,7 @@ class Colis224_Database {
             id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             tracking_number varchar(50) NOT NULL,
             client_id bigint(20) UNSIGNED DEFAULT NULL,
+            client_email varchar(100) DEFAULT NULL,
             sender_name varchar(255) DEFAULT NULL,
             sender_phone varchar(50) DEFAULT NULL,
             sender_id_card varchar(100) DEFAULT NULL,
@@ -124,6 +125,7 @@ class Colis224_Database {
             paid_amount decimal(15,2) DEFAULT 0.00,
             remaining_amount decimal(15,2) DEFAULT 0.00,
             driver_id bigint(20) UNSIGNED DEFAULT NULL,
+            recorded_by_agent_id bigint(20) UNSIGNED DEFAULT NULL,
             photos text DEFAULT NULL,
             receipt_photo varchar(255) DEFAULT NULL,
             notes text DEFAULT NULL,
@@ -139,7 +141,8 @@ class Colis224_Database {
             KEY status (status),
             KEY payment_status (payment_status),
             KEY validation_status (validation_status),
-            KEY created_by (created_by)
+            KEY created_by (created_by),
+            KEY recorded_by_agent_id (recorded_by_agent_id)
         ) $charset_collate;";
         dbDelta($sql_parcels);
 
