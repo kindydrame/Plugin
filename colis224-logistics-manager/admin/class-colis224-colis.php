@@ -1484,6 +1484,18 @@ class Colis224_Parcels {
 
         $result = $wpdb->insert($table_parcels, $data);
 
+        if ($result === false) {
+            // Afficher l'erreur SQL pour debug
+            echo '<div class="notice notice-error is-dismissible">';
+            echo '<p><strong>❌ Erreur lors de l\'enregistrement du colis</strong></p>';
+            if ($wpdb->last_error) {
+                echo '<p>Erreur SQL : ' . esc_html($wpdb->last_error) . '</p>';
+                echo '<p><em>Note : Si l\'erreur mentionne "Unknown column", veuillez désactiver puis réactiver le plugin pour mettre à jour la base de données.</em></p>';
+            }
+            echo '</div>';
+            return;
+        }
+
         if ($result) {
             $parcel_id = $wpdb->insert_id;
 

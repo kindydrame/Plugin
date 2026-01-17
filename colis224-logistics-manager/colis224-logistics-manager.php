@@ -173,6 +173,7 @@ class Colis224_Logistics_Manager {
         // Chargement des classes principales (OBLIGATOIRES)
         $required_files = array(
             COLIS224_PLUGIN_DIR . 'includes/class-colis224-database.php',
+            COLIS224_PLUGIN_DIR . 'includes/class-colis224-db-upgrade.php', // Migration BDD v2.18.3
             COLIS224_PLUGIN_DIR . 'includes/class-colis224-admin.php',
             COLIS224_PLUGIN_DIR . 'includes/class-colis224-sanitizer.php'
         );
