@@ -54,6 +54,19 @@ class Colis224_Clients {
 
         $clients = $wpdb->get_results("SELECT * FROM $table_clients WHERE $where ORDER BY created_at DESC");
 
+        // Vérifier si l'utilisateur a un rôle non-admin (v2.18.3)
+        $current_user = wp_get_current_user();
+        $user_role = 'admin';
+        if (class_exists('Colis224_Permissions')) {
+            $user_role = Colis224_Permissions::get_user_colis224_role($current_user->ID);
+            if (!$user_role) {
+                $user_role = 'admin';
+            }
+        }
+        $hide_actions = ($user_role === 'colis224_agent') ||
+                        in_array('editor', $current_user->roles) ||
+                        in_array('author', $current_user->roles);
+
         ?>
         <div class="wrap colis224-wrap">
             <h1 class="colis224-title">
@@ -120,6 +133,7 @@ class Colis224_Clients {
                                         <span class="dashicons dashicons-visibility"></span>
                                         Voir
                                     </a>
+                                    <?php if (!$hide_actions): // Seuls les admins peuvent modifier/supprimer ?>
                                     <a href="?page=colis224-clients&action=edit&id=<?php echo $client->id; ?>"
                                        class="button button-small" title="Modifier ce client">
                                         <span class="dashicons dashicons-edit"></span>
@@ -132,6 +146,7 @@ class Colis224_Clients {
                                         <span class="dashicons dashicons-trash"></span>
                                         Supprimer
                                     </a>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -585,16 +600,18 @@ class Colis224_Clients {
         $user_role = Colis224_Permissions::get_user_colis224_role($current_user->ID);
 
         // RESTRICTIONS AGENTS / EDITORS / AUTHORS (v2.18.3)
-        $is_agent = ($user_role === 'colis224_agent') || in_array('editor', $current_user->roles) || in_array('author', $current_user->roles);
-        $is_validated = ($current_client->validation_status === 'validated');
+        $is_restricted_role = ($user_role === 'colis224_agent') ||
+                              in_array('editor', $current_user->roles) ||
+                              in_array('author', $current_user->roles);
+        $is_admin = current_user_can('manage_options');
 
-        // Bloquer TOUTE modification pour les agents/éditeurs/auteurs après validation admin
-        if ($is_agent && $is_validated) {
+        // Bloquer TOUTE modification pour les éditeurs/auteurs (pas seulement les validés)
+        if ($is_restricted_role && !$is_admin) {
             echo '<div class="notice notice-error is-dismissible" style="border-left-color: #dc3545;">';
             echo '<p><strong>🔒 MODIFICATION INTERDITE</strong></p>';
-            echo '<p style="font-size: 14px;">Ce client a été <strong>validé par un administrateur</strong>. En tant qu\'agent/éditeur, vous ne pouvez plus le modifier.</p>';
-            echo '<p style="font-size: 13px; color: #666;">📌 <em>Les clients validés sont verrouillés pour garantir l\'intégrité des données.</em></p>';
-            echo '<p style="font-size: 13px;">👉 Contactez un administrateur si vous devez effectuer des modifications.</p>';
+            echo '<p style="font-size: 14px;">En tant qu\'éditeur/agent, vous <strong>ne pouvez pas modifier</strong> les clients existants.</p>';
+            echo '<p style="font-size: 13px; color: #666;">📌 <em>Seuls les administrateurs peuvent modifier les clients.</em></p>';
+            echo '<p style="font-size: 13px;">💡 Vous pouvez créer de nouveaux clients qui seront soumis pour validation.</p>';
             echo '</div>';
             return;
         }

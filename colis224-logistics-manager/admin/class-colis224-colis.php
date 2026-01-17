@@ -197,6 +197,7 @@ class Colis224_Parcels {
                                         <span class="dashicons dashicons-visibility"></span>
                                         Voir
                                     </a>
+                                    <?php if (!$hide_financial): // Seuls les admins peuvent modifier/supprimer ?>
                                     <a href="?page=colis224-parcels&action=edit&id=<?php echo $parcel->id; ?>"
                                        class="button button-small" title="Modifier ce colis">
                                         <span class="dashicons dashicons-edit"></span>
@@ -209,6 +210,7 @@ class Colis224_Parcels {
                                         <span class="dashicons dashicons-trash"></span>
                                         Supprimer
                                     </a>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -1412,16 +1414,18 @@ class Colis224_Parcels {
         }
 
         // RESTRICTIONS AGENTS / EDITORS / AUTHORS (v2.18.3)
-        $is_agent = ($user_role === 'colis224_agent') || in_array('editor', $current_user->roles) || in_array('author', $current_user->roles);
-        $is_validated = ($current_parcel->validation_status === 'validated');
+        $is_restricted_role = ($user_role === 'colis224_agent') ||
+                              in_array('editor', $current_user->roles) ||
+                              in_array('author', $current_user->roles);
+        $is_admin = current_user_can('manage_options');
 
-        // Bloquer TOUTE modification pour les agents/éditeurs/auteurs après validation admin
-        if ($is_agent && $is_validated) {
+        // Bloquer TOUTE modification pour les éditeurs/auteurs (pas seulement les validés)
+        if ($is_restricted_role && !$is_admin) {
             echo '<div class="notice notice-error is-dismissible" style="border-left-color: #dc3545;">';
             echo '<p><strong>🔒 MODIFICATION INTERDITE</strong></p>';
-            echo '<p style="font-size: 14px;">Ce colis a été <strong>validé par un administrateur</strong>. En tant qu\'agent/éditeur, vous ne pouvez plus le modifier.</p>';
-            echo '<p style="font-size: 13px; color: #666;">📌 <em>Les colis validés sont verrouillés pour garantir l\'intégrité des données.</em></p>';
-            echo '<p style="font-size: 13px;">👉 Contactez un administrateur si vous devez effectuer des modifications.</p>';
+            echo '<p style="font-size: 14px;">En tant qu\'éditeur/agent, vous <strong>ne pouvez pas modifier</strong> les colis existants.</p>';
+            echo '<p style="font-size: 13px; color: #666;">📌 <em>Seuls les administrateurs peuvent modifier les colis.</em></p>';
+            echo '<p style="font-size: 13px;">💡 Vous pouvez créer de nouveaux colis qui seront soumis pour validation.</p>';
             echo '</div>';
             return;
         }
