@@ -65,6 +65,11 @@ class Colis224_Parcels {
             $where .= " AND p.validation_status != 'rejected'";
         }
 
+        // Vérifier si l'utilisateur a un rôle non-financier (v2.18.3)
+        $hide_financial = ($user_role === 'colis224_agent') ||
+                         in_array('editor', $current_user->roles) ||
+                         in_array('author', $current_user->roles);
+
         if (!empty($search)) {
             $where .= $wpdb->prepare(
                 " AND (p.tracking_number LIKE %s OR p.recipient_name LIKE %s OR p.recipient_phone LIKE %s)",
@@ -145,8 +150,8 @@ class Colis224_Parcels {
                             <th>Origine</th>
                             <th>Transport</th>
                             <th>Statut</th>
-                            <th>Montant</th>
-                            <th>Paiement</th>
+                            <?php if (!$hide_financial): ?><th>Montant</th><?php endif; ?>
+                            <?php if (!$hide_financial): ?><th>Paiement</th><?php endif; ?>
                             <th>Date</th>
                             <th>Actions</th>
                         </tr>
@@ -154,7 +159,7 @@ class Colis224_Parcels {
                     <tbody>
                         <?php if (empty($parcels)): ?>
                         <tr>
-                            <td colspan="10" style="text-align: center;">Aucun colis trouvé.</td>
+                            <td colspan="<?php echo $hide_financial ? '8' : '10'; ?>" style="text-align: center;">Aucun colis trouvé.</td>
                         </tr>
                         <?php else: ?>
                             <?php foreach ($parcels as $parcel): ?>
@@ -172,6 +177,7 @@ class Colis224_Parcels {
                                         <?php echo esc_html($parcel->status); ?>
                                     </span>
                                 </td>
+                                <?php if (!$hide_financial): ?>
                                 <td>
                                     <?php echo number_format($parcel->total_amount, 0, ',', ' '); ?> <?php echo $parcel->currency; ?>
                                 </td>
@@ -183,6 +189,7 @@ class Colis224_Parcels {
                                     <br><small>Payé: <?php echo number_format($parcel->paid_amount, 0, ',', ' '); ?></small>
                                     <?php endif; ?>
                                 </td>
+                                <?php endif; ?>
                                 <td><?php echo date('d/m/Y', strtotime($parcel->created_at)); ?></td>
                                 <td class="colis224-actions">
                                     <a href="?page=colis224-parcels&action=view&id=<?php echo $parcel->id; ?>"
@@ -788,6 +795,19 @@ class Colis224_Parcels {
     private static function display_details($parcel_id) {
         global $wpdb;
 
+        // Vérifier si l'utilisateur a un rôle non-financier (v2.18.3)
+        $current_user = wp_get_current_user();
+        $user_role = 'admin';
+        if (class_exists('Colis224_Permissions')) {
+            $user_role = Colis224_Permissions::get_user_colis224_role($current_user->ID);
+            if (!$user_role) {
+                $user_role = 'admin';
+            }
+        }
+        $hide_financial = ($user_role === 'colis224_agent') ||
+                         in_array('editor', $current_user->roles) ||
+                         in_array('author', $current_user->roles);
+
         $table_parcels = $wpdb->prefix . 'colis224_parcels';
         $parcel = $wpdb->get_row($wpdb->prepare("
             SELECT p.*, c.name as client_name, c.phone as client_phone,
@@ -901,6 +921,7 @@ class Colis224_Parcels {
                     </table>
                 </div>
 
+                <?php if (!$hide_financial): ?>
                 <!-- Paiement -->
                 <div class="colis224-card">
                     <h3><span class="dashicons dashicons-money-alt"></span> Informations de Paiement</h3>
@@ -946,6 +967,7 @@ class Colis224_Parcels {
                         </tr>
                     </table>
                 </div>
+                <?php endif; ?>
 
                 <!-- Dates -->
                 <div class="colis224-card">
