@@ -840,10 +840,12 @@ class Colis224_Parcels {
                     <span class="dashicons dashicons-arrow-left-alt"></span>
                     Retour à la liste
                 </a>
+                <?php if (!$hide_financial): // Seuls les admins peuvent modifier ?>
                 <a href="?page=colis224-parcels&action=edit&id=<?php echo $parcel->id; ?>" class="page-title-action">
                     <span class="dashicons dashicons-edit"></span>
                     Modifier
                 </a>
+                <?php endif; ?>
             </h1>
 
             <!-- Actions rapides -->

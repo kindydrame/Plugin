@@ -267,6 +267,19 @@ class Colis224_Clients {
         $table_clients = $wpdb->prefix . 'colis224_clients';
         $table_parcels = $wpdb->prefix . 'colis224_parcels';
 
+        // Vérifier si l'utilisateur a un rôle non-admin (v2.18.3)
+        $current_user = wp_get_current_user();
+        $user_role = 'admin';
+        if (class_exists('Colis224_Permissions')) {
+            $user_role = Colis224_Permissions::get_user_colis224_role($current_user->ID);
+            if (!$user_role) {
+                $user_role = 'admin';
+            }
+        }
+        $hide_actions = ($user_role === 'colis224_agent') ||
+                        in_array('editor', $current_user->roles) ||
+                        in_array('author', $current_user->roles);
+
         $client = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_clients WHERE id = %d", $client_id));
 
         if (!$client) {
@@ -294,9 +307,11 @@ class Colis224_Clients {
                 <a href="?page=colis224-clients" class="page-title-action">
                     <span class="dashicons dashicons-arrow-left-alt"></span> Retour
                 </a>
+                <?php if (!$hide_actions): // Seuls les admins peuvent modifier ?>
                 <a href="?page=colis224-clients&action=edit&id=<?php echo $client->id; ?>" class="page-title-action">
                     <span class="dashicons dashicons-edit"></span> Modifier
                 </a>
+                <?php endif; ?>
             </h1>
 
             <div class="colis224-dashboard-grid colis224-grid-3">
