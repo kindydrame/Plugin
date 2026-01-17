@@ -188,20 +188,16 @@ class Colis224_Logistics_Manager {
             }
         }
 
-        // Migration système de validation hiérarchique (v2.11.0)
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-migration-validation.php';
+        // Système d'historique des colis (v2.11.0)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-parcel-history.php';
 
         // Système d'archivage automatique (v2.12.0)
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-migration-archiving.php';
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-archiving.php';
 
         // Système de détection et fusion des doublons (v2.13.0)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-duplicate-detector.php';
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-migration-duplicates.php';
 
         // Système de gestion des lots internationaux (v2.14.0)
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-migration-batches.php';
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-batches.php';
 
         // Système d'import CSV (v2.15.0)
@@ -212,14 +208,10 @@ class Colis224_Logistics_Manager {
 
         // Chargement des modules admin
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-diagnostic.php';
-        require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-migration-admin.php';  // v2.11.0
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-validation.php';       // v2.11.0
-        require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-migration-archiving-admin.php';  // v2.12.0
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-archives.php';         // v2.12.0
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-duplicates.php';       // v2.13.0
-        require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-migration-duplicates-admin.php';  // v2.13.0
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-batches-admin.php';   // v2.14.0
-        require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-migration-batches-admin.php';  // v2.14.0
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-csv-import-admin.php';  // v2.15.0
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-colis.php';
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-clients.php';
@@ -256,24 +248,19 @@ class Colis224_Logistics_Manager {
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-support-admin.php';       // Admin support
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-paypal.php';           // Intégration PayPal
 
-        // Nouvelles fonctionnalités v2.7+ (Surveillance & Avis)
+        // Nouvelles fonctionnalités v2.7+ (Surveillance)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-auto-reminders.php';   // Relances automatiques
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-surveillance-admin.php';  // Admin surveillance
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-reviews.php';          // Système d'avis
 
-        // Nouvelles fonctionnalités v2.8+ (Live Chat, Inventory, Marketing, Workflows, MultiLang)
+        // Nouvelles fonctionnalités v2.8+ (Live Chat, Inventory, MultiLang)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-live-chat.php';         // Live Chat Support
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-live-chat-admin.php';     // Admin Live Chat
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-inventory-advanced.php'; // Gestion stock avancée
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-marketing.php';         // Marketing Automation
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-partner-portal.php';    // Portail Partenaire
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-agent-portal.php';      // Portail Agent (v2.18.2)
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-workflows.php';         // Automatisation Workflows
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-multilang.php';         // Multi-langues
 
-        // Nouvelles fonctionnalités v2.9+ (Fleet, Insurance, Scheduling, Analytics)
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-fleet-management.php';  // Gestion de flotte
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-insurance.php';         // Assurance et déclarations
+        // Nouvelles fonctionnalités v2.9+ (Scheduling, Analytics)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-scheduling.php';        // Réservation et planification
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-analytics.php';         // Tableau de bord analytique
 
