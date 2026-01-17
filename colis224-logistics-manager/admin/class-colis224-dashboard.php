@@ -865,12 +865,12 @@ class Colis224_Dashboard {
             return;
         }
 
-        <?php
         // Vérifier si l'utilisateur a un rôle non-financier (v2.18.3)
         $current_user = wp_get_current_user();
         $hide_financial = $is_agent || $is_driver ||
                          in_array('editor', $current_user->roles) ||
                          in_array('author', $current_user->roles);
+
         ?>
         <table class="colis224-table">
             <thead>
