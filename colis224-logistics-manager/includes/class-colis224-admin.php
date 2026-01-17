@@ -37,13 +37,9 @@ class Colis224_Admin {
             'colis224-departures-automation' => 'colis224_manage_all',
             'colis224-settings' => 'colis224_manage_all',
             'colis224-diagnostic' => 'colis224_manage_all',
-            'colis224-migration' => 'colis224_manage_all',
             'colis224-archives' => 'colis224_manage_all',
-            'colis224-migration-archiving' => 'colis224_manage_all',
             'colis224-duplicates' => 'colis224_manage_all',
-            'colis224-migration-duplicates' => 'colis224_manage_all',
             'colis224-batches' => 'colis224_manage_all',
-            'colis224-migration-batches' => 'colis224_manage_all',
             'colis224-csv-import' => 'colis224_manage_all',
         );
 
@@ -144,27 +140,31 @@ class Colis224_Admin {
             26
         );
 
-        // Tableau de bord - accessible aux agents, livreurs, comptables, managers
+        // ══════════════════════════════════════════
+        // 📊 GESTION PRINCIPALE
+        // ══════════════════════════════════════════
+
+        // Tableau de bord
         add_submenu_page(
             'colis224-dashboard',
             'Tableau de bord',
-            'Tableau de bord',
+            '📈 Tableau de bord',
             'colis224_view_parcels',
             'colis224-dashboard',
             array('Colis224_Dashboard', 'display_dashboard')
         );
 
-        // Gestion des colis - accessible aux agents et plus
+        // Gestion des colis
         add_submenu_page(
             'colis224-dashboard',
             'Gestion des Colis',
-            'Colis',
+            '📦 Colis',
             'colis224_view_parcels',
             'colis224-parcels',
             array('Colis224_Parcels', 'display_page')
         );
 
-        // Validation des colis (v2.11.0) - seulement admin/manager
+        // Validation des colis
         add_submenu_page(
             'colis224-dashboard',
             'Validation des Colis',
@@ -174,207 +174,51 @@ class Colis224_Admin {
             array('Colis224_Validation', 'display_page')
         );
 
-        // Gestion des clients - accessible aux agents et plus
+        // Gestion des clients
         add_submenu_page(
             'colis224-dashboard',
             'Gestion des Clients',
-            'Clients',
+            '👥 Clients',
             'colis224_manage_clients',
             'colis224-clients',
             array('Colis224_Clients', 'display_page')
         );
 
-        // Gestion des partenaires - seulement admin/manager
+        // ══════════════════════════════════════════
+        // 🏢 ORGANISATION
+        // ══════════════════════════════════════════
+
+        // Gestion des partenaires
         add_submenu_page(
             'colis224-dashboard',
             'Gestion des Partenaires',
-            'Partenaires',
+            '🤝 Partenaires',
             'colis224_manage_all',
             'colis224-partners',
             array('Colis224_Partners', 'display_page')
         );
 
-        // Gestion de l'équipe - seulement admin/manager
+        // Gestion de l'équipe
         add_submenu_page(
             'colis224-dashboard',
             'Gestion de l\'Équipe',
-            'Équipe',
+            '👨‍💼 Équipe',
             'colis224_manage_all',
             'colis224-team',
             array('Colis224_Team', 'display_page')
         );
 
-        // Comptabilité - accessible aux comptables et plus
-        add_submenu_page(
-            'colis224-dashboard',
-            'Comptabilité',
-            'Comptabilité',
-            'colis224_manage_accounting',
-            'colis224-accounting',
-            array('Colis224_Accounting', 'display_page')
-        );
-
-        // Rapports - accessible aux comptables, managers et plus
-        add_submenu_page(
-            'colis224-dashboard',
-            'Rapports et Statistiques',
-            'Rapports',
-            'colis224_view_reports',
-            'colis224-reports',
-            array('Colis224_Reports', 'display_page')
-        );
-
-        // Service d'achat - seulement admin/manager
-        add_submenu_page(
-            'colis224-dashboard',
-            'Service d\'Achat',
-            'Service d\'Achat',
-            'colis224_manage_all',
-            'colis224-purchases',
-            array('Colis224_Purchases', 'display_page')
-        );
-
-        // Programme de Fidélité - seulement admin/manager
-        add_submenu_page(
-            'colis224-dashboard',
-            'Programme de Fidélité',
-            'Fidélité',
-            'colis224_manage_all',
-            'colis224-loyalty',
-            array('Colis224_Loyalty_Admin', 'display_page')
-        );
-
-        // Multi-Entrepôts - seulement admin/manager
+        // Multi-Entrepôts
         add_submenu_page(
             'colis224-dashboard',
             'Gestion des Entrepôts',
-            'Entrepôts',
+            '🏭 Entrepôts',
             'colis224_manage_all',
             'colis224-warehouses',
             array('Colis224_Warehouses_Admin', 'display_page')
         );
 
-        // Support / SAV - seulement admin/manager
-        add_submenu_page(
-            'colis224-dashboard',
-            'Support / SAV',
-            'Support',
-            'colis224_manage_all',
-            'colis224-support',
-            array('Colis224_Support_Admin', 'display_page')
-        );
-
-        // Surveillance & Relances - seulement admin/manager
-        add_submenu_page(
-            'colis224-dashboard',
-            'Surveillance Anti-Vol',
-            '🛡️ Surveillance',
-            'colis224_manage_all',
-            'colis224-surveillance',
-            array('Colis224_Surveillance_Admin', 'display_page')
-        );
-
-        // Live Chat - seulement admin/manager
-        add_submenu_page(
-            'colis224-dashboard',
-            'Live Chat Support',
-            '💬 Live Chat',
-            'colis224_manage_all',
-            'colis224-live-chat',
-            array('Colis224_Live_Chat_Admin', 'display_page')
-        );
-
-        // Départs et Réservations - seulement admin/manager
-        add_submenu_page(
-            'colis224-dashboard',
-            'Départs et Réservations',
-            '🚀 Départs',
-            'colis224_manage_all',
-            'colis224-departures',
-            array('Colis224_Departures_Admin', 'display_page')
-        );
-
-        // Automatisation des Départs - seulement admin/manager
-        add_submenu_page(
-            'colis224-dashboard',
-            'Automatisation des Départs',
-            '🤖 Automatisation',
-            'colis224_manage_all',
-            'colis224-departures-automation',
-            array('Colis224_Departures_Automation_Admin', 'display_page')
-        );
-
-        // Paramètres - seulement admin/manager
-        add_submenu_page(
-            'colis224-dashboard',
-            'Paramètres',
-            'Paramètres',
-            'colis224_manage_all',
-            'colis224-settings',
-            array('Colis224_Settings', 'display_page')
-        );
-        
-        // Menu Diagnostic - seulement admin/manager
-        add_submenu_page(
-            'colis224-dashboard',
-            'Diagnostic Système',
-            '🔧 Diagnostic',
-            'colis224_manage_all',
-            'colis224-diagnostic',
-            array('Colis224_Diagnostic', 'display_page')
-        );
-
-        // Menu Migration (v2.11.0) - seulement admin/manager
-        add_submenu_page(
-            'colis224-dashboard',
-            'Migration Système',
-            '🔄 Migration',
-            'colis224_manage_all',
-            'colis224-migration',
-            array('Colis224_Migration_Admin', 'display_page')
-        );
-
-        // Menu Archivage (v2.12.0) - seulement admin/manager
-        add_submenu_page(
-            'colis224-dashboard',
-            'Gestion des Archives',
-            '📦 Archives',
-            'colis224_manage_all',
-            'colis224-archives',
-            array('Colis224_Archives', 'display_page')
-        );
-
-        // Menu Migration Archivage (v2.12.0) - seulement admin/manager
-        add_submenu_page(
-            'colis224-dashboard',
-            'Migration Archivage',
-            '🗄️ Migration Archivage',
-            'colis224_manage_all',
-            'colis224-migration-archiving',
-            array('Colis224_Migration_Archiving_Admin', 'display_page')
-        );
-
-        // Menu Détection Doublons (v2.13.0) - seulement admin/manager
-        add_submenu_page(
-            'colis224-dashboard',
-            'Détection des Doublons',
-            '👥 Doublons',
-            'colis224_manage_all',
-            'colis224-duplicates',
-            array('Colis224_Duplicates', 'display_page')
-        );
-
-        // Menu Migration Doublons (v2.13.0) - seulement admin/manager
-        add_submenu_page(
-            'colis224-dashboard',
-            'Migration Doublons',
-            '🔄 Migration Doublons',
-            'colis224_manage_all',
-            'colis224-migration-duplicates',
-            array('Colis224_Migration_Duplicates_Admin', 'display_page')
-        );
-
-        // Menu Lots Internationaux (v2.14.0) - seulement admin/manager
+        // Lots Internationaux
         add_submenu_page(
             'colis224-dashboard',
             'Lots Internationaux',
@@ -384,24 +228,164 @@ class Colis224_Admin {
             array('Colis224_Batches_Admin', 'display_page')
         );
 
-        // Menu Migration Lots Internationaux (v2.14.0) - seulement admin/manager
+        // ══════════════════════════════════════════
+        // 💰 FINANCES
+        // ══════════════════════════════════════════
+
+        // Comptabilité
         add_submenu_page(
             'colis224-dashboard',
-            'Migration Lots Internationaux',
-            '🔄 Migration Lots',
-            'colis224_manage_all',
-            'colis224-migration-batches',
-            array('Colis224_Migration_Batches_Admin', 'display_page')
+            'Comptabilité',
+            '💰 Comptabilité',
+            'colis224_manage_accounting',
+            'colis224-accounting',
+            array('Colis224_Accounting', 'display_page')
         );
 
-        // Menu Import CSV (v2.15.0) - seulement admin/manager
+        // Rapports et Statistiques
+        add_submenu_page(
+            'colis224-dashboard',
+            'Rapports et Statistiques',
+            '📊 Rapports',
+            'colis224_view_reports',
+            'colis224-reports',
+            array('Colis224_Reports', 'display_page')
+        );
+
+        // ══════════════════════════════════════════
+        // 🎁 SERVICES CLIENTS
+        // ══════════════════════════════════════════
+
+        // Service d'achat
+        add_submenu_page(
+            'colis224-dashboard',
+            'Service d\'Achat',
+            '🛒 Service d\'Achat',
+            'colis224_manage_all',
+            'colis224-purchases',
+            array('Colis224_Purchases', 'display_page')
+        );
+
+        // Programme de Fidélité
+        add_submenu_page(
+            'colis224-dashboard',
+            'Programme de Fidélité',
+            '🎁 Fidélité',
+            'colis224_manage_all',
+            'colis224-loyalty',
+            array('Colis224_Loyalty_Admin', 'display_page')
+        );
+
+        // Support / SAV
+        add_submenu_page(
+            'colis224-dashboard',
+            'Support / SAV',
+            '🎧 Support',
+            'colis224_manage_all',
+            'colis224-support',
+            array('Colis224_Support_Admin', 'display_page')
+        );
+
+        // Live Chat
+        add_submenu_page(
+            'colis224-dashboard',
+            'Live Chat Support',
+            '💬 Live Chat',
+            'colis224_manage_all',
+            'colis224-live-chat',
+            array('Colis224_Live_Chat_Admin', 'display_page')
+        );
+
+        // ══════════════════════════════════════════
+        // 🚀 AUTOMATISATION & DÉPARTS
+        // ══════════════════════════════════════════
+
+        // Départs et Réservations
+        add_submenu_page(
+            'colis224-dashboard',
+            'Départs et Réservations',
+            '🚀 Départs',
+            'colis224_manage_all',
+            'colis224-departures',
+            array('Colis224_Departures_Admin', 'display_page')
+        );
+
+        // Automatisation des Départs
+        add_submenu_page(
+            'colis224-dashboard',
+            'Automatisation des Départs',
+            '🤖 Automatisation',
+            'colis224_manage_all',
+            'colis224-departures-automation',
+            array('Colis224_Departures_Automation_Admin', 'display_page')
+        );
+
+        // Surveillance Anti-Vol
+        add_submenu_page(
+            'colis224-dashboard',
+            'Surveillance Anti-Vol',
+            '🛡️ Surveillance',
+            'colis224_manage_all',
+            'colis224-surveillance',
+            array('Colis224_Surveillance_Admin', 'display_page')
+        );
+
+        // ══════════════════════════════════════════
+        // 🔧 OUTILS & MAINTENANCE
+        // ══════════════════════════════════════════
+
+        // Import CSV
         add_submenu_page(
             'colis224-dashboard',
             'Import CSV',
-            '📊 Import CSV',
+            '📥 Import CSV',
             'colis224_manage_all',
             'colis224-csv-import',
             array('Colis224_CSV_Import_Admin', 'display_page')
+        );
+
+        // Gestion des Archives
+        add_submenu_page(
+            'colis224-dashboard',
+            'Gestion des Archives',
+            '📚 Archives',
+            'colis224_manage_all',
+            'colis224-archives',
+            array('Colis224_Archives', 'display_page')
+        );
+
+        // Détection des Doublons
+        add_submenu_page(
+            'colis224-dashboard',
+            'Détection des Doublons',
+            '🔍 Doublons',
+            'colis224_manage_all',
+            'colis224-duplicates',
+            array('Colis224_Duplicates', 'display_page')
+        );
+
+        // Diagnostic Système
+        add_submenu_page(
+            'colis224-dashboard',
+            'Diagnostic Système',
+            '🔧 Diagnostic',
+            'colis224_manage_all',
+            'colis224-diagnostic',
+            array('Colis224_Diagnostic', 'display_page')
+        );
+
+        // ══════════════════════════════════════════
+        // ⚙️ CONFIGURATION
+        // ══════════════════════════════════════════
+
+        // Paramètres
+        add_submenu_page(
+            'colis224-dashboard',
+            'Paramètres',
+            '⚙️ Paramètres',
+            'colis224_manage_all',
+            'colis224-settings',
+            array('Colis224_Settings', 'display_page')
         );
 
         // Filtrer les menus selon les permissions
@@ -459,13 +443,9 @@ class Colis224_Admin {
                 'colis224-departures-automation',
                 'colis224-settings',
                 'colis224-diagnostic',
-                'colis224-migration',
                 'colis224-archives',
-                'colis224-migration-archiving',
                 'colis224-duplicates',
-                'colis224-migration-duplicates',
                 'colis224-batches',
-                'colis224-migration-batches',
                 'colis224-csv-import'
             ));
         }
