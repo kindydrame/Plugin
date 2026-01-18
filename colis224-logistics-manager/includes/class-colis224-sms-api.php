@@ -72,6 +72,14 @@ class Colis224_SMS_API {
             return array('success' => false, 'message' => 'Numéro de téléphone invalide');
         }
 
+        // Vérifier si le provider est activé
+        if ($this->provider === 'none' || empty($this->provider)) {
+            return array(
+                'success' => false,
+                'message' => 'SMS désactivé - Veuillez activer un fournisseur SMS dans les paramètres'
+            );
+        }
+
         // Envoyer selon le provider
         switch ($this->provider) {
             case 'twilio':
@@ -95,7 +103,7 @@ class Colis224_SMS_API {
                 break;
 
             default:
-                $result = array('success' => false, 'message' => 'Provider inconnu');
+                $result = array('success' => false, 'message' => 'Fournisseur SMS non configuré');
         }
 
         // Logger le SMS

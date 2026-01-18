@@ -335,11 +335,15 @@ class Colis224_Admin_Alerts {
         }
 
         // Envoyer SMS
+        $sms_error_message = '';
         if (($message_template->message_type === 'sms' || $message_template->message_type === 'whatsapp' || $message_template->message_type === 'all') && $phone) {
             if (class_exists('Colis224_SMS_API')) {
                 $sms_api = new Colis224_SMS_API();
                 $sms_result = $sms_api->send_sms($phone, $body, $parcel_id);
                 $sent_sms = $sms_result['success'];
+                if (!$sent_sms) {
+                    $sms_error_message = $sms_result['message'] ?? 'Erreur lors de l\'envoi du SMS';
+                }
             }
         }
 
@@ -356,7 +360,12 @@ class Colis224_Admin_Alerts {
             if ($sent_sms) $messages[] = 'SMS';
             wp_send_json_success(implode(' et ', $messages) . ' envoyé(s) avec succès !');
         } else {
-            wp_send_json_error('Impossible d\'envoyer le message');
+            // Afficher le message d'erreur spécifique
+            $error_msg = 'Impossible d\'envoyer le message';
+            if (!empty($sms_error_message)) {
+                $error_msg = $sms_error_message;
+            }
+            wp_send_json_error($error_msg);
         }
     }
 }
