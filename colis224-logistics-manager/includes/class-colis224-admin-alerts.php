@@ -323,13 +323,23 @@ class Colis224_Admin_Alerts {
         $body = Colis224_Message_Templates::replace_variables($message_template->message_body, $variables);
 
         // Envoyer le message selon le type
-        $sent = false;
+        $sent_email = false;
+        $sent_sms = false;
 
+        // Envoyer EMAIL
         if (($message_template->message_type === 'email' || $message_template->message_type === 'all') && $email) {
-            // Envoyer email
             if (class_exists('Colis224_Notifications')) {
                 $notif = new Colis224_Notifications();
-                $sent = $notif->send_email($email, $subject, $body, $parcel);
+                $sent_email = $notif->send_email($email, $subject, $body, $parcel);
+            }
+        }
+
+        // Envoyer SMS
+        if (($message_template->message_type === 'sms' || $message_template->message_type === 'whatsapp' || $message_template->message_type === 'all') && $phone) {
+            if (class_exists('Colis224_SMS_API')) {
+                $sms_api = new Colis224_SMS_API();
+                $sms_result = $sms_api->send_sms($phone, $body, $parcel_id);
+                $sent_sms = $sms_result['success'];
             }
         }
 
@@ -339,8 +349,12 @@ class Colis224_Admin_Alerts {
             $message_id
         ));
 
-        if ($sent || ($message_template->message_type !== 'email' && $message_template->message_type !== 'all')) {
-            wp_send_json_success('Message envoyé !');
+        // Résultat
+        if ($sent_email || $sent_sms) {
+            $messages = array();
+            if ($sent_email) $messages[] = 'Email';
+            if ($sent_sms) $messages[] = 'SMS';
+            wp_send_json_success(implode(' et ', $messages) . ' envoyé(s) avec succès !');
         } else {
             wp_send_json_error('Impossible d\'envoyer le message');
         }

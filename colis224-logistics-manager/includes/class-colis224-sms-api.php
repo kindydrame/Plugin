@@ -43,6 +43,11 @@ class Colis224_SMS_API {
                 'client_secret' => get_option('colis224_orange_sms_client_secret', ''),
                 'sender_name' => get_option('colis224_orange_sms_sender', 'Colis224'),
             ),
+            'nimbasms' => array(
+                'sid' => get_option('colis224_nimbasms_sid', '48782ece605fcd66fc15da242cc0142c'),
+                'auth_token' => get_option('colis224_nimbasms_token', 'Basic NDg3ODJlY2U2MDVmY2Q2NmZjMTVkYTI0MmNjMDE0MmM6elhMZGIySU4xVVh2eE5KZWdyakJkX0VGMlE2XzRtemFGM2FFTlE1NW94ZmYyS0lWX1lMNi1KdnE1TUNaRGV0Vm9wc1JVaXYyNkdIUkhpYWVPbmdMU2xnQnNPOS1YNXE0dWkxS1BEUFFOMjQ='),
+                'from' => get_option('colis224_nimbasms_from', 'Colis224'),
+            ),
             'custom' => array(
                 'api_url' => get_option('colis224_custom_sms_api_url', ''),
                 'api_key' => get_option('colis224_custom_sms_api_key', ''),
@@ -79,6 +84,10 @@ class Colis224_SMS_API {
 
             case 'orange':
                 $result = $this->send_via_orange($to, $message);
+                break;
+
+            case 'nimbasms':
+                $result = $this->send_via_nimbasms($to, $message);
                 break;
 
             case 'custom':
@@ -214,6 +223,72 @@ class Colis224_SMS_API {
         }
 
         return array('success' => false, 'message' => 'Erreur Orange SMS');
+    }
+
+    /**
+     * Envoyer via NimbaSMS
+     */
+    private function send_via_nimbasms($to, $message) {
+        $settings = $this->settings['nimbasms'];
+
+        if (empty($settings['sid']) || empty($settings['auth_token'])) {
+            return array('success' => false, 'message' => 'Identifiants NimbaSMS manquants');
+        }
+
+        // Formater le numéro pour Guinée (+224)
+        $to = $this->format_phone_number($to);
+        if (!$to) {
+            return array('success' => false, 'message' => 'Numéro invalide');
+        }
+
+        $api_url = 'https://api.nimbasms.com/v1/messages';
+
+        $data = array(
+            'to' => $to,
+            'message' => $message,
+            'from' => !empty($settings['from']) ? $settings['from'] : 'Colis224'
+        );
+
+        $args = array(
+            'method' => 'POST',
+            'headers' => array(
+                'Authorization' => $settings['auth_token'],
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json'
+            ),
+            'body' => json_encode($data),
+            'timeout' => 30,
+            'sslverify' => true
+        );
+
+        $response = wp_remote_post($api_url, $args);
+
+        if (is_wp_error($response)) {
+            return array(
+                'success' => false,
+                'message' => 'Erreur de connexion: ' . $response->get_error_message()
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        $decoded_body = json_decode($body, true);
+
+        // Vérifier le code de statut (NimbaSMS utilise 200, 201 pour succès)
+        if ($status_code >= 200 && $status_code < 300) {
+            return array(
+                'success' => true,
+                'message' => 'SMS envoyé via NimbaSMS',
+                'message_id' => isset($decoded_body['id']) ? $decoded_body['id'] : null
+            );
+        } else {
+            $error_message = isset($decoded_body['message']) ? $decoded_body['message'] : 'Erreur NimbaSMS';
+            return array(
+                'success' => false,
+                'message' => $error_message,
+                'status_code' => $status_code
+            );
+        }
     }
 
     /**

@@ -609,7 +609,8 @@ class Colis224_Parcels {
                                     <?php if ($is_edit && !empty($parcel->receipt_photo)): ?>
                                     <div style="margin-top: 10px; background: #e7f3ff; padding: 10px; border-radius: 4px; border-left: 3px solid #2271b1;">
                                         <strong style="color: #0c5589;">📎 Fichier actuel:</strong><br>
-                                        <a href="<?php echo esc_url(wp_get_upload_dir()['baseurl'] . '/colis224/receipts/' . basename($parcel->receipt_photo)); ?>" target="_blank" style="color: #2271b1; text-decoration: none;">
+                                        <?php $upload_dir = wp_upload_dir(); ?>
+                                        <a href="<?php echo esc_url($upload_dir['baseurl'] . '/colis224/receipts/' . basename($parcel->receipt_photo)); ?>" target="_blank" style="color: #2271b1; text-decoration: none;">
                                             <span class="dashicons dashicons-media-document" style="vertical-align: middle;"></span>
                                             <?php echo esc_html(basename($parcel->receipt_photo)); ?>
                                         </a>
@@ -628,13 +629,14 @@ class Colis224_Parcels {
                                     <div style="margin-top: 10px;">
                                         <strong>Photos actuelles:</strong>
                                         <?php
-                                        $photos = maybe_unserialize($parcel->photos);
+                                        $photos = json_decode($parcel->photos, true);
+                                        $upload_dir = wp_upload_dir();
                                         if (is_array($photos)):
                                             foreach ($photos as $photo):
                                         ?>
                                         <div style="display: inline-block; margin: 5px;">
-                                            <a href="<?php echo esc_url(wp_get_upload_dir()['baseurl'] . '/colis224/parcels/' . basename($photo)); ?>" target="_blank">
-                                                <img src="<?php echo esc_url(wp_get_upload_dir()['baseurl'] . '/colis224/parcels/' . basename($photo)); ?>"
+                                            <a href="<?php echo esc_url($upload_dir['baseurl'] . '/colis224/photos/' . basename($photo)); ?>" target="_blank">
+                                                <img src="<?php echo esc_url($upload_dir['baseurl'] . '/colis224/photos/' . basename($photo)); ?>"
                                                      style="max-width: 100px; max-height: 100px; border-radius: 4px; border: 2px solid #ddd;">
                                             </a>
                                         </div>
@@ -1214,7 +1216,7 @@ class Colis224_Parcels {
 
                     <!-- Photo du Reçu -->
                     <?php if (!empty($parcel->receipt_photo)):
-                        $upload_dir = wp_get_upload_dir();
+                        $upload_dir = wp_upload_dir();
                         $receipt_url = $upload_dir['baseurl'] . '/colis224/receipts/' . basename($parcel->receipt_photo);
                         $receipt_path = $upload_dir['basedir'] . '/colis224/receipts/' . basename($parcel->receipt_photo);
                         $file_exists = file_exists($receipt_path);

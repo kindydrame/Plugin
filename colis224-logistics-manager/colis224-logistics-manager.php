@@ -3,7 +3,7 @@
  * Plugin Name: Colis224 Logistics Manager
  * Plugin URI: https://colis224.com
  * Description: Système complet de gestion logistique pour entreprise de livraison internationale (Chine, France, Maroc, Sénégal, Côte d'Ivoire, Guinée)
- * Version: 2.18.3
+ * Version: 2.18.6
  * Author: Colis224
  * Author URI: https://colis224.com
  * License: GPL-2.0+
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Constantes du plugin
-define('COLIS224_VERSION', '2.18.3');
+define('COLIS224_VERSION', '2.18.6');
 define('COLIS224_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('COLIS224_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('COLIS224_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -239,6 +239,8 @@ class Colis224_Logistics_Manager {
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-permissions.php';       // Système de permissions
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-export.php';            // Export avancé
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-sms-api.php';           // SMS API
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-nimbasms.php';          // NimbaSMS Integration (v2.18.6)
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-activator-nimbasms.php'; // NimbaSMS Auto-Activation (v2.18.6)
 
         // Nouvelles fonctionnalités v2.3+ (Programme Fidélité + Multi-Entrepôts)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-loyalty.php';           // Programme de fidélité
