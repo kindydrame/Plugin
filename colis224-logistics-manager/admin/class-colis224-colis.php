@@ -603,14 +603,15 @@ class Colis224_Parcels {
                                 <div class="colis224-form-group">
                                     <label for="receipt_photo">📄 Photo du Reçu</label>
                                     <input type="file" name="receipt_photo" id="receipt_photo" accept="image/*,.pdf">
-                                    <small style="display: block; margin-top: 5px;">
-                                        Formats acceptés: JPG, PNG, PDF (max 5MB)
+                                    <small style="display: block; margin-top: 5px; color: #666;">
+                                        📌 <strong>1 seul fichier</strong> • Formats: JPG, PNG, PDF (max 5MB)
                                     </small>
                                     <?php if ($is_edit && !empty($parcel->receipt_photo)): ?>
-                                    <div style="margin-top: 10px;">
-                                        <strong>Fichier actuel:</strong>
-                                        <a href="<?php echo esc_url(wp_get_upload_dir()['baseurl'] . '/colis224/receipts/' . basename($parcel->receipt_photo)); ?>" target="_blank">
-                                            📎 <?php echo esc_html(basename($parcel->receipt_photo)); ?>
+                                    <div style="margin-top: 10px; background: #e7f3ff; padding: 10px; border-radius: 4px; border-left: 3px solid #2271b1;">
+                                        <strong style="color: #0c5589;">📎 Fichier actuel:</strong><br>
+                                        <a href="<?php echo esc_url(wp_get_upload_dir()['baseurl'] . '/colis224/receipts/' . basename($parcel->receipt_photo)); ?>" target="_blank" style="color: #2271b1; text-decoration: none;">
+                                            <span class="dashicons dashicons-media-document" style="vertical-align: middle;"></span>
+                                            <?php echo esc_html(basename($parcel->receipt_photo)); ?>
                                         </a>
                                     </div>
                                     <?php endif; ?>
@@ -620,8 +621,8 @@ class Colis224_Parcels {
                                 <div class="colis224-form-group">
                                     <label for="parcel_photos">📸 Photos du Colis</label>
                                     <input type="file" name="parcel_photos[]" id="parcel_photos" accept="image/*" multiple>
-                                    <small style="display: block; margin-top: 5px;">
-                                        Vous pouvez sélectionner plusieurs photos (max 10MB total)
+                                    <small style="display: block; margin-top: 5px; color: #666;">
+                                        📌 <strong>Maximum 5 photos</strong> • Formats: JPG, PNG (max 2MB par photo)
                                     </small>
                                     <?php if ($is_edit && !empty($parcel->photos)): ?>
                                     <div style="margin-top: 10px;">
@@ -718,6 +719,58 @@ class Colis224_Parcels {
             }
 
             $('#unit_price, #discount_type, #discount_value').on('input change', calculateTotal);
+
+            // Validation du nombre de photos (max 5)
+            $('#parcel_photos').on('change', function() {
+                var files = this.files;
+                if (files.length > 5) {
+                    alert('⚠️ Vous pouvez sélectionner maximum 5 photos du colis.\n\nNombre de photos sélectionnées : ' + files.length);
+                    this.value = ''; // Réinitialiser
+                    return false;
+                }
+
+                // Vérifier la taille de chaque photo (max 2MB)
+                var maxSize = 2 * 1024 * 1024; // 2MB
+                var oversized = [];
+                for (var i = 0; i < files.length; i++) {
+                    if (files[i].size > maxSize) {
+                        oversized.push(files[i].name);
+                    }
+                }
+
+                if (oversized.length > 0) {
+                    alert('⚠️ Les fichiers suivants dépassent 2MB :\n\n' + oversized.join('\n') + '\n\nVeuillez sélectionner des fichiers plus petits.');
+                    this.value = ''; // Réinitialiser
+                    return false;
+                }
+
+                // Afficher un message de confirmation
+                if (files.length > 0) {
+                    $(this).next('small').after('<div class="notice notice-success inline" style="margin-top: 10px; padding: 8px;"><p style="margin: 0;">✅ ' + files.length + ' photo(s) sélectionnée(s)</p></div>');
+                    setTimeout(function() {
+                        $('.notice.inline').fadeOut(function() { $(this).remove(); });
+                    }, 3000);
+                }
+            });
+
+            // Validation du reçu (max 5MB)
+            $('#receipt_photo').on('change', function() {
+                var file = this.files[0];
+                if (file) {
+                    var maxSize = 5 * 1024 * 1024; // 5MB
+                    if (file.size > maxSize) {
+                        alert('⚠️ Le fichier dépasse 5MB.\n\nTaille : ' + (file.size / 1024 / 1024).toFixed(2) + ' MB\n\nVeuillez sélectionner un fichier plus petit.');
+                        this.value = ''; // Réinitialiser
+                        return false;
+                    }
+
+                    // Afficher un message de confirmation
+                    $(this).next('small').after('<div class="notice notice-success inline" style="margin-top: 10px; padding: 8px;"><p style="margin: 0;">✅ Reçu sélectionné : ' + file.name + '</p></div>');
+                    setTimeout(function() {
+                        $('.notice.inline').fadeOut(function() { $(this).remove(); });
+                    }, 3000);
+                }
+            });
 
             // Génération automatique du numéro de suivi
             $('#recipient_phone').on('blur', function() {
@@ -1151,6 +1204,139 @@ class Colis224_Parcels {
                 <p><?php echo nl2br(esc_html($parcel->notes)); ?></p>
             </div>
             <?php endif; ?>
+
+            <!-- Documents et Photos -->
+            <?php if (!empty($parcel->receipt_photo) || !empty($parcel->photos)): ?>
+            <div class="colis224-card">
+                <h3><span class="dashicons dashicons-camera"></span> 📸 Documents et Photos</h3>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+
+                    <!-- Photo du Reçu -->
+                    <?php if (!empty($parcel->receipt_photo)):
+                        $upload_dir = wp_get_upload_dir();
+                        $receipt_url = $upload_dir['baseurl'] . '/colis224/receipts/' . basename($parcel->receipt_photo);
+                        $receipt_path = $upload_dir['basedir'] . '/colis224/receipts/' . basename($parcel->receipt_photo);
+                        $file_exists = file_exists($receipt_path);
+                    ?>
+                    <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 2px solid #e0e0e0;">
+                        <h4 style="margin: 0 0 10px 0; color: #2271b1; display: flex; align-items: center; gap: 8px;">
+                            <span class="dashicons dashicons-media-document" style="font-size: 20px;"></span>
+                            📄 Reçu du Colis
+                        </h4>
+                        <?php if ($file_exists): ?>
+                            <?php
+                            $file_extension = strtolower(pathinfo($parcel->receipt_photo, PATHINFO_EXTENSION));
+                            $is_image = in_array($file_extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                            ?>
+
+                            <?php if ($is_image): ?>
+                                <div style="margin-bottom: 10px;">
+                                    <a href="<?php echo esc_url($receipt_url); ?>" target="_blank">
+                                        <img src="<?php echo esc_url($receipt_url); ?>"
+                                             alt="Reçu"
+                                             style="width: 100%; height: 200px; object-fit: cover; border-radius: 6px; cursor: pointer; transition: transform 0.2s;"
+                                             onmouseover="this.style.transform='scale(1.02)'"
+                                             onmouseout="this.style.transform='scale(1)'">
+                                    </a>
+                                </div>
+                            <?php else: ?>
+                                <div style="background: #fff; padding: 30px; text-align: center; border-radius: 6px; margin-bottom: 10px;">
+                                    <span class="dashicons dashicons-media-document" style="font-size: 48px; color: #999;"></span>
+                                    <p style="margin: 10px 0 0 0; color: #666;">Document PDF</p>
+                                </div>
+                            <?php endif; ?>
+
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <a href="<?php echo esc_url($receipt_url); ?>" target="_blank" class="button button-small" style="flex: 1;">
+                                    <span class="dashicons dashicons-visibility" style="vertical-align: middle;"></span>
+                                    Voir
+                                </a>
+                                <a href="<?php echo esc_url($receipt_url); ?>" download class="button button-small" style="flex: 1;">
+                                    <span class="dashicons dashicons-download" style="vertical-align: middle;"></span>
+                                    Télécharger
+                                </a>
+                            </div>
+                            <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                                📎 <?php echo esc_html(basename($parcel->receipt_photo)); ?>
+                            </div>
+                        <?php else: ?>
+                            <div style="background: #fff3cd; padding: 15px; border-radius: 6px; border-left: 4px solid #ffc107;">
+                                <p style="margin: 0; color: #856404;">
+                                    <span class="dashicons dashicons-warning" style="vertical-align: middle;"></span>
+                                    Fichier introuvable sur le serveur
+                                </p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Photos du Colis -->
+                    <?php if (!empty($parcel->photos)):
+                        $photos = json_decode($parcel->photos, true);
+                        if (!is_array($photos)) {
+                            $photos = explode(',', $parcel->photos);
+                        }
+                        $photos = array_filter($photos);
+
+                        // Limiter à 5 photos maximum
+                        $photos = array_slice($photos, 0, 5);
+
+                        if (!empty($photos)):
+                    ?>
+                    <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 2px solid #e0e0e0;">
+                        <h4 style="margin: 0 0 10px 0; color: #2271b1; display: flex; align-items: center; gap: 8px;">
+                            <span class="dashicons dashicons-format-gallery" style="font-size: 20px;"></span>
+                            📷 Photos du Colis
+                            <span style="background: #2271b1; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: auto;">
+                                <?php echo count($photos); ?>/5
+                            </span>
+                        </h4>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 10px;">
+                            <?php foreach ($photos as $index => $photo):
+                                $photo = trim($photo);
+                                $photo_url = $upload_dir['baseurl'] . '/colis224/photos/' . basename($photo);
+                                $photo_path = $upload_dir['basedir'] . '/colis224/photos/' . basename($photo);
+                                $photo_exists = file_exists($photo_path);
+                            ?>
+                                <?php if ($photo_exists): ?>
+                                <div style="position: relative;">
+                                    <a href="<?php echo esc_url($photo_url); ?>" target="_blank" style="display: block;">
+                                        <img src="<?php echo esc_url($photo_url); ?>"
+                                             alt="Photo <?php echo $index + 1; ?>"
+                                             style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; cursor: pointer; transition: transform 0.2s; border: 2px solid #ddd;"
+                                             onmouseover="this.style.transform='scale(1.05)'; this.style.borderColor='#2271b1'"
+                                             onmouseout="this.style.transform='scale(1)'; this.style.borderColor='#ddd'">
+                                    </a>
+                                    <div style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">
+                                        <?php echo $index + 1; ?>
+                                    </div>
+                                </div>
+                                <?php else: ?>
+                                <div style="background: #fff; border: 2px dashed #ccc; border-radius: 6px; height: 120px; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 10px;">
+                                    <span class="dashicons dashicons-warning" style="font-size: 24px; color: #999;"></span>
+                                    <span style="font-size: 10px; color: #999; margin-top: 5px; text-align: center;">Introuvable</span>
+                                </div>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <?php if (count($photos) > 0): ?>
+                        <div style="background: #e7f3ff; padding: 10px; border-radius: 6px; border-left: 4px solid #2271b1;">
+                            <p style="margin: 0; font-size: 12px; color: #0c5589;">
+                                <span class="dashicons dashicons-info" style="vertical-align: middle;"></span>
+                                Cliquez sur une photo pour l'agrandir dans un nouvel onglet
+                            </p>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                    <?php endif; ?>
+
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
         <?php
     }
@@ -1439,6 +1625,72 @@ class Colis224_Parcels {
             $validation_status = 'pending'; // Les agents, éditeurs et auteurs doivent attendre validation
         }
 
+        // === GESTION DES UPLOADS DE FICHIERS ===
+        $upload_dir = wp_upload_dir();
+        $colis224_upload_dir = $upload_dir['basedir'] . '/colis224';
+
+        // Créer les dossiers si nécessaire
+        $receipts_dir = $colis224_upload_dir . '/receipts';
+        $photos_dir = $colis224_upload_dir . '/photos';
+
+        if (!file_exists($receipts_dir)) {
+            wp_mkdir_p($receipts_dir);
+        }
+        if (!file_exists($photos_dir)) {
+            wp_mkdir_p($photos_dir);
+        }
+
+        $receipt_photo_path = null;
+        $parcel_photos_paths = array();
+
+        // Upload du reçu (1 seul fichier, max 5MB)
+        if (!empty($_FILES['receipt_photo']['name']) && $_FILES['receipt_photo']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['receipt_photo'];
+
+            // Vérifier la taille (max 5MB)
+            if ($file['size'] <= 5 * 1024 * 1024) {
+                $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $allowed_extensions = array('jpg', 'jpeg', 'png', 'gif', 'pdf');
+
+                if (in_array($file_extension, $allowed_extensions)) {
+                    $filename = 'receipt_' . time() . '_' . uniqid() . '.' . $file_extension;
+                    $destination = $receipts_dir . '/' . $filename;
+
+                    if (move_uploaded_file($file['tmp_name'], $destination)) {
+                        $receipt_photo_path = $filename;
+                    }
+                }
+            }
+        }
+
+        // Upload des photos du colis (max 5 photos, max 2MB chacune)
+        if (!empty($_FILES['parcel_photos']['name'][0])) {
+            $files = $_FILES['parcel_photos'];
+            $file_count = count($files['name']);
+
+            // Limiter à 5 photos maximum
+            $file_count = min($file_count, 5);
+
+            for ($i = 0; $i < $file_count; $i++) {
+                if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                    // Vérifier la taille (max 2MB)
+                    if ($files['size'][$i] <= 2 * 1024 * 1024) {
+                        $file_extension = strtolower(pathinfo($files['name'][$i], PATHINFO_EXTENSION));
+                        $allowed_extensions = array('jpg', 'jpeg', 'png', 'gif', 'webp');
+
+                        if (in_array($file_extension, $allowed_extensions)) {
+                            $filename = 'photo_' . time() . '_' . uniqid() . '_' . $i . '.' . $file_extension;
+                            $destination = $photos_dir . '/' . $filename;
+
+                            if (move_uploaded_file($files['tmp_name'][$i], $destination)) {
+                                $parcel_photos_paths[] = $filename;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         $data = array(
             'tracking_number' => $tracking_number,
             'client_id' => !empty($_POST['client_id']) ? intval($_POST['client_id']) : null,
@@ -1471,6 +1723,9 @@ class Colis224_Parcels {
             'driver_id' => !empty($_POST['driver_id']) ? intval($_POST['driver_id']) : null,
             'recorded_by_agent_id' => !empty($_POST['recorded_by_agent_id']) ? intval($_POST['recorded_by_agent_id']) : null,
             'notes' => sanitize_textarea_field($_POST['notes']),
+            // Documents (v2.18.4)
+            'receipt_photo' => $receipt_photo_path,
+            'photos' => !empty($parcel_photos_paths) ? json_encode($parcel_photos_paths) : null,
             // Nouveaux champs v2.11.0 (validation hiérarchique)
             'created_by' => $current_user->ID,
             'validation_status' => $validation_status
@@ -1597,6 +1852,81 @@ class Colis224_Parcels {
         $paid_amount = floatval($_POST['paid_amount']);
         $remaining_amount = $total_amount - $paid_amount;
 
+        // === GESTION DES UPLOADS DE FICHIERS (UPDATE) ===
+        $upload_dir = wp_upload_dir();
+        $colis224_upload_dir = $upload_dir['basedir'] . '/colis224';
+
+        // Créer les dossiers si nécessaire
+        $receipts_dir = $colis224_upload_dir . '/receipts';
+        $photos_dir = $colis224_upload_dir . '/photos';
+
+        if (!file_exists($receipts_dir)) {
+            wp_mkdir_p($receipts_dir);
+        }
+        if (!file_exists($photos_dir)) {
+            wp_mkdir_p($photos_dir);
+        }
+
+        $receipt_photo_path = $current_parcel->receipt_photo; // Garder l'existant par défaut
+        $parcel_photos_paths = json_decode($current_parcel->photos, true); // Garder les existantes
+        if (!is_array($parcel_photos_paths)) {
+            $parcel_photos_paths = array();
+        }
+
+        // Upload du reçu (1 seul fichier, max 5MB) - remplace l'ancien
+        if (!empty($_FILES['receipt_photo']['name']) && $_FILES['receipt_photo']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['receipt_photo'];
+
+            // Vérifier la taille (max 5MB)
+            if ($file['size'] <= 5 * 1024 * 1024) {
+                $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $allowed_extensions = array('jpg', 'jpeg', 'png', 'gif', 'pdf');
+
+                if (in_array($file_extension, $allowed_extensions)) {
+                    // Supprimer l'ancien fichier si existe
+                    if ($current_parcel->receipt_photo && file_exists($receipts_dir . '/' . $current_parcel->receipt_photo)) {
+                        @unlink($receipts_dir . '/' . $current_parcel->receipt_photo);
+                    }
+
+                    $filename = 'receipt_' . time() . '_' . uniqid() . '.' . $file_extension;
+                    $destination = $receipts_dir . '/' . $filename;
+
+                    if (move_uploaded_file($file['tmp_name'], $destination)) {
+                        $receipt_photo_path = $filename;
+                    }
+                }
+            }
+        }
+
+        // Upload des photos du colis (max 5 photos, max 2MB chacune) - ajoute aux existantes
+        if (!empty($_FILES['parcel_photos']['name'][0])) {
+            $files = $_FILES['parcel_photos'];
+            $file_count = count($files['name']);
+
+            // Limiter au total de 5 photos (existantes + nouvelles)
+            $remaining_slots = 5 - count($parcel_photos_paths);
+            $file_count = min($file_count, $remaining_slots);
+
+            for ($i = 0; $i < $file_count; $i++) {
+                if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                    // Vérifier la taille (max 2MB)
+                    if ($files['size'][$i] <= 2 * 1024 * 1024) {
+                        $file_extension = strtolower(pathinfo($files['name'][$i], PATHINFO_EXTENSION));
+                        $allowed_extensions = array('jpg', 'jpeg', 'png', 'gif', 'webp');
+
+                        if (in_array($file_extension, $allowed_extensions)) {
+                            $filename = 'photo_' . time() . '_' . uniqid() . '_' . $i . '.' . $file_extension;
+                            $destination = $photos_dir . '/' . $filename;
+
+                            if (move_uploaded_file($files['tmp_name'][$i], $destination)) {
+                                $parcel_photos_paths[] = $filename;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         $data = array(
             'client_id' => !empty($_POST['client_id']) ? intval($_POST['client_id']) : null,
             'client_email' => !empty($_POST['client_email']) ? sanitize_email($_POST['client_email']) : null,
@@ -1627,7 +1957,10 @@ class Colis224_Parcels {
             'remaining_amount' => $remaining_amount,
             'driver_id' => !empty($_POST['driver_id']) ? intval($_POST['driver_id']) : null,
             'recorded_by_agent_id' => !empty($_POST['recorded_by_agent_id']) ? intval($_POST['recorded_by_agent_id']) : null,
-            'notes' => sanitize_textarea_field($_POST['notes'])
+            'notes' => sanitize_textarea_field($_POST['notes']),
+            // Documents (v2.18.4)
+            'receipt_photo' => $receipt_photo_path,
+            'photos' => !empty($parcel_photos_paths) ? json_encode($parcel_photos_paths) : null
         );
 
         $result = $wpdb->update($table_parcels, $data, array('id' => $parcel_id));
