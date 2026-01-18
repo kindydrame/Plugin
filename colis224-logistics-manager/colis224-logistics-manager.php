@@ -174,6 +174,7 @@ class Colis224_Logistics_Manager {
         $required_files = array(
             COLIS224_PLUGIN_DIR . 'includes/class-colis224-database.php',
             COLIS224_PLUGIN_DIR . 'includes/class-colis224-db-upgrade.php', // Migration BDD v2.18.3
+            COLIS224_PLUGIN_DIR . 'includes/class-colis224-admin-alerts.php', // Alertes admin v2.18.4
             COLIS224_PLUGIN_DIR . 'includes/class-colis224-admin.php',
             COLIS224_PLUGIN_DIR . 'includes/class-colis224-sanitizer.php'
         );
@@ -216,6 +217,7 @@ class Colis224_Logistics_Manager {
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-csv-import-admin.php';  // v2.15.0
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-colis.php';
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-clients.php';
+        require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-message-templates.php';  // v2.18.4
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-partenaires.php';
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-equipe.php';
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-comptabilite.php';

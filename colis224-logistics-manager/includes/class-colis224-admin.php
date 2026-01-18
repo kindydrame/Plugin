@@ -184,6 +184,16 @@ class Colis224_Admin {
             array('Colis224_Clients', 'display_page')
         );
 
+        // Messages préenregistrés
+        add_submenu_page(
+            'colis224-dashboard',
+            'Messages Préenregistrés',
+            '💬 Messages',
+            'colis224_manage_all',
+            'colis224-message-templates',
+            array('Colis224_Message_Templates', 'display_page')
+        );
+
         // ══════════════════════════════════════════
         // 🏢 ORGANISATION
         // ══════════════════════════════════════════

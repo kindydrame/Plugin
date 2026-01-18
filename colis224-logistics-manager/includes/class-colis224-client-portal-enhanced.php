@@ -182,6 +182,9 @@ class Colis224_Client_Portal_Enhanced {
             </div>
             <?php endif; ?>
 
+            <!-- Prochains Départs -->
+            <?php echo self::render_upcoming_departures(); ?>
+
             <!-- Onglets Navigation -->
             <div class="portal-tabs">
                 <button class="tab-btn active" data-tab="parcels">
@@ -1783,6 +1786,89 @@ class Colis224_Client_Portal_Enhanced {
             }, 30000);
         });
         </script>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Afficher les prochains départs
+     */
+    private static function render_upcoming_departures() {
+        // Charger la classe Departures si nécessaire
+        if (!class_exists('Colis224_Departures')) {
+            return '';
+        }
+
+        global $wpdb;
+
+        // Récupérer les prochains départs (limités à 5)
+        $table_departures = $wpdb->prefix . 'colis224_departures';
+        $departures = $wpdb->get_results(
+            "SELECT * FROM {$table_departures}
+            WHERE departure_date >= CURDATE()
+            AND status = 'scheduled'
+            ORDER BY departure_date ASC
+            LIMIT 5"
+        );
+
+        if (empty($departures)) {
+            return '';
+        }
+
+        ob_start();
+        ?>
+        <div class="colis224-departures-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 20px; margin: 20px 0; color: white;">
+            <h3 style="margin: 0 0 15px 0; color: white; display: flex; align-items: center; gap: 10px;">
+                <span class="dashicons dashicons-airplane" style="font-size: 24px;"></span>
+                ✈️ Prochains Départs
+            </h3>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+                <?php foreach ($departures as $dep):
+                    $transport_icon = $dep->transport_type === 'plane' ? '✈️' : '🚢';
+                    $departure_datetime = new DateTime($dep->departure_date);
+                    $formatted_date = $departure_datetime->format('d/m/Y');
+                    $days_until = floor((strtotime($dep->departure_date) - time()) / (60 * 60 * 24));
+
+                    $whatsapp_message = urlencode("Bonjour, je souhaite réserver pour le départ:\n📍 {$dep->departure_city} → {$dep->arrival_city}\n📅 {$formatted_date}\n{$transport_icon} Transport");
+                    $whatsapp_url = "https://wa.me/{$dep->whatsapp_number}?text={$whatsapp_message}";
+                ?>
+                <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 10px; padding: 15px; border: 1px solid rgba(255,255,255,0.2);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 28px;"><?php echo $transport_icon; ?></span>
+                        <span style="background: rgba(255,255,255,0.3); padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+                            <?php echo $days_until === 0 ? "Aujourd'hui" : ($days_until === 1 ? "Demain" : "Dans {$days_until} jours"); ?>
+                        </span>
+                    </div>
+
+                    <div style="font-size: 14px; margin-bottom: 8px;">
+                        📅 <strong><?php echo esc_html($formatted_date); ?></strong>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 16px;">
+                        <strong><?php echo esc_html($dep->departure_city); ?></strong>
+                        <span>→</span>
+                        <strong><?php echo esc_html($dep->arrival_city); ?></strong>
+                    </div>
+
+                    <?php if ($dep->price_estimate && $dep->price_estimate > 0): ?>
+                    <div style="margin-bottom: 10px; font-size: 14px; opacity: 0.9;">
+                        💰 À partir de <strong><?php echo number_format($dep->price_estimate, 0, ',', ' ') . ' ' . esc_html($dep->currency); ?></strong>
+                    </div>
+                    <?php endif; ?>
+
+                    <a href="<?php echo esc_url($whatsapp_url); ?>" target="_blank"
+                       style="display: inline-block; background: #25D366; color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; width: 100%; text-align: center; margin-top: 5px;">
+                        📱 Réserver sur WhatsApp
+                    </a>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <p style="margin: 15px 0 0 0; font-size: 13px; opacity: 0.8; text-align: center;">
+                💡 Cliquez sur "Réserver" pour contacter notre équipe via WhatsApp
+            </p>
+        </div>
         <?php
         return ob_get_clean();
     }
