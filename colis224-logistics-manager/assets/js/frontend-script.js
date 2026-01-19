@@ -119,22 +119,25 @@
                             console.log('🍪 Cookies actuels:', document.cookie);
                         }
 
-                        // Afficher le message de succès
+                        var targetUrl = response.data.redirect_url || window.location.href;
+
+                        // Afficher le message de succès avec lien de fallback
                         $message.html(
                             '<div class="colis224-message colis224-message-success">' +
                             response.data.message +
-                            '<br><small>Redirection en cours...</small>' +
+                            '<br><small>Redirection automatique...</small>' +
+                            '<br><a href="' + targetUrl + '" style="color: #fff; text-decoration: underline; font-weight: bold;">Cliquez ici si la redirection ne fonctionne pas</a>' +
                             '</div>'
                         );
 
-                        // Redirection après 2 secondes (laisser le temps à la session de se sauvegarder côté serveur)
+                        // REDIRECTION IMMÉDIATE (session persiste maintenant)
+                        console.log('🔄 Redirection immédiate vers:', targetUrl);
+                        console.log('🍪 Cookies avant redirect:', document.cookie);
+
+                        // Méthode 1: Rechargement simple (préféré car même URL)
                         setTimeout(function() {
-                            console.log('🔄 Redirection vers:', response.data.redirect_url);
-                            console.log('🍪 Cookies avant redirect:', document.cookie);
-                            var targetUrl = response.data.redirect_url || window.location.href;
-                            // Forcer le rechargement complet de la page (supprime l'historique)
-                            window.location.replace(targetUrl);
-                        }, 2000);
+                            window.location.reload(true); // true = force depuis serveur
+                        }, 500); // 500ms suffisant maintenant que session fonctionne
                     } else {
                         // Afficher le message d'erreur
                         $message.html(
