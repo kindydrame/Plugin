@@ -88,12 +88,6 @@ class Colis224_Client_Auth {
         $_SESSION['colis224_client_email'] = $client->email;
         $_SESSION['colis224_login_time'] = time();
 
-        // Forcer l'écriture de la session (important pour AJAX)
-        session_write_close();
-
-        // Redémarrer la session immédiatement pour la requête en cours
-        session_start();
-
         // Mettre à jour la dernière connexion du client
         $wpdb->update(
             $table_clients,

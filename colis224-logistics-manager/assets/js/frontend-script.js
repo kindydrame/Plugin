@@ -117,12 +117,12 @@
                             '</div>'
                         );
 
-                        // Redirection après 1.5 secondes (laisser le temps à la session de se sauvegarder)
+                        // Redirection après 2 secondes (laisser le temps à la session de se sauvegarder côté serveur)
                         setTimeout(function() {
                             var targetUrl = response.data.redirect_url || window.location.href;
-                            // Forcer le rechargement complet de la page
+                            // Forcer le rechargement complet de la page (supprime l'historique)
                             window.location.replace(targetUrl);
-                        }, 1500);
+                        }, 2000);
                     } else {
                         // Afficher le message d'erreur
                         $message.html(
