@@ -241,6 +241,7 @@ class Colis224_Logistics_Manager {
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-sms-api.php';           // SMS API
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-nimbasms.php';          // NimbaSMS Integration (v2.18.6)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-activator-nimbasms.php'; // NimbaSMS Auto-Activation (v2.18.6)
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-diagnostic-client.php'; // Diagnostic Espace Client (TEMPORAIRE - v2.18.6)
 
         // Nouvelles fonctionnalités v2.3+ (Programme Fidélité + Multi-Entrepôts)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-loyalty.php';           // Programme de fidélité
