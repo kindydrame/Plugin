@@ -26,6 +26,13 @@ class Colis224_Client_Auth {
      */
     public function start_session() {
         if (!session_id() && !headers_sent()) {
+            // Configurer les paramètres de session AVANT session_start()
+            // Important pour la compatibilité avec les navigateurs modernes
+            ini_set('session.cookie_samesite', 'Lax');
+            ini_set('session.cookie_httponly', '1');
+            ini_set('session.cookie_secure', is_ssl() ? '1' : '0');
+            ini_set('session.cookie_path', COOKIEPATH ? COOKIEPATH : '/');
+
             session_start();
         }
     }
@@ -76,8 +83,12 @@ class Colis224_Client_Auth {
             return false;
         }
 
-        // Démarrer la session si nécessaire
-        if (!session_id()) {
+        // Démarrer la session si nécessaire avec configuration appropriée
+        if (!session_id() && !headers_sent()) {
+            ini_set('session.cookie_samesite', 'Lax');
+            ini_set('session.cookie_httponly', '1');
+            ini_set('session.cookie_secure', is_ssl() ? '1' : '0');
+            ini_set('session.cookie_path', COOKIEPATH ? COOKIEPATH : '/');
             session_start();
         }
 
@@ -96,14 +107,18 @@ class Colis224_Client_Auth {
             'hash' => md5($client->id . $client->phone . AUTH_KEY) // Sécurité
         )));
 
+        // Utiliser le format array pour PHP 7.3+ avec SameSite explicite
         setcookie(
             'colis224_client_session',
             $cookie_value,
-            time() + (2 * 60 * 60), // 2 heures
-            COOKIEPATH,
-            COOKIE_DOMAIN,
-            is_ssl(),
-            true // HttpOnly pour la sécurité
+            array(
+                'expires' => time() + (2 * 60 * 60), // 2 heures
+                'path' => COOKIEPATH ? COOKIEPATH : '/',
+                'domain' => COOKIE_DOMAIN ? COOKIE_DOMAIN : '',
+                'secure' => is_ssl(),
+                'httponly' => true,
+                'samesite' => 'Lax' // Important pour les redirections
+            )
         );
 
         // Mettre à jour la dernière connexion du client
@@ -136,11 +151,14 @@ class Colis224_Client_Auth {
             setcookie(
                 'colis224_client_session',
                 '',
-                time() - 3600,
-                COOKIEPATH,
-                COOKIE_DOMAIN,
-                is_ssl(),
-                true
+                array(
+                    'expires' => time() - 3600,
+                    'path' => COOKIEPATH ? COOKIEPATH : '/',
+                    'domain' => COOKIE_DOMAIN ? COOKIE_DOMAIN : '',
+                    'secure' => is_ssl(),
+                    'httponly' => true,
+                    'samesite' => 'Lax'
+                )
             );
             unset($_COOKIE['colis224_client_session']);
         }
@@ -164,11 +182,14 @@ class Colis224_Client_Auth {
             setcookie(
                 'colis224_client_session',
                 '',
-                time() - 3600,
-                COOKIEPATH,
-                COOKIE_DOMAIN,
-                is_ssl(),
-                true
+                array(
+                    'expires' => time() - 3600,
+                    'path' => COOKIEPATH ? COOKIEPATH : '/',
+                    'domain' => COOKIE_DOMAIN ? COOKIE_DOMAIN : '',
+                    'secure' => is_ssl(),
+                    'httponly' => true,
+                    'samesite' => 'Lax'
+                )
             );
             unset($_COOKIE['colis224_client_session']);
         }
@@ -241,8 +262,12 @@ class Colis224_Client_Auth {
             return false;
         }
 
-        // Restaurer la session
-        if (!session_id()) {
+        // Restaurer la session avec configuration appropriée
+        if (!session_id() && !headers_sent()) {
+            ini_set('session.cookie_samesite', 'Lax');
+            ini_set('session.cookie_httponly', '1');
+            ini_set('session.cookie_secure', is_ssl() ? '1' : '0');
+            ini_set('session.cookie_path', COOKIEPATH ? COOKIEPATH : '/');
             session_start();
         }
 

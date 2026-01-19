@@ -4,6 +4,33 @@ Toutes les modifications importantes de ce projet seront documentées dans ce fi
 
 ---
 
+## [2.18.7] - 2026-01-19
+
+### 🔧 CORRECTIONS CRITIQUES
+
+#### **Fix: Session Persistence après Connexion Client**
+- **Problème résolu**: Session ne persistait pas après connexion AJAX, redirection montrait formulaire au lieu du dashboard
+- **Cause**: Cookies sans attribut `SameSite` explicite rejetés par navigateurs modernes
+- **Solution implémentée**:
+  - ✅ Ajout attribut `SameSite=Lax` à tous les cookies de session
+  - ✅ Configuration cookies avec format array PHP 7.3+ (expires, path, domain, secure, httponly, samesite)
+  - ✅ Configuration `ini_set()` pour session PHP avant `session_start()`
+  - ✅ Application cohérente dans tous les emplacements: `login_client()`, `restore_session_from_cookie()`, `start_session()`, `client_portal_shortcode()`
+- **Fichiers modifiés**:
+  - `includes/class-colis224-client-auth.php` - Cookie backup avec SameSite
+  - `includes/class-colis224-frontend-portal.php` - Session shortcode
+  - `colis224-logistics-manager.php` - Session globale
+
+#### **Améliorations Cookie Backup**
+- Cookie `colis224_client_session` maintenant correctement défini avec:
+  - Path: `COOKIEPATH` ou `/` par défaut
+  - Domain: `COOKIE_DOMAIN` ou vide par défaut
+  - Secure: Automatique selon HTTPS
+  - HttpOnly: `true` pour sécurité
+  - SameSite: `Lax` pour compatibilité redirections
+
+---
+
 ## [2.10.1] - 2025-11-05
 
 ### 🎨 AMÉLIORATIONS MAJEURES DU MODULE DÉPARTS

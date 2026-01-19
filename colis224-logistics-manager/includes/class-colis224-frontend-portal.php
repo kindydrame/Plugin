@@ -224,8 +224,12 @@ class Colis224_Frontend_Portal {
     public function client_portal_shortcode($atts) {
         ob_start();
 
-        // S'assurer que la session est démarrée
-        if (!session_id()) {
+        // S'assurer que la session est démarrée avec configuration appropriée
+        if (!session_id() && !headers_sent()) {
+            ini_set('session.cookie_samesite', 'Lax');
+            ini_set('session.cookie_httponly', '1');
+            ini_set('session.cookie_secure', is_ssl() ? '1' : '0');
+            ini_set('session.cookie_path', COOKIEPATH ? COOKIEPATH : '/');
             session_start();
         }
 
