@@ -88,6 +88,24 @@ class Colis224_Client_Auth {
         $_SESSION['colis224_client_email'] = $client->email;
         $_SESSION['colis224_login_time'] = time();
 
+        // SOLUTION ROBUSTE: Utiliser aussi un cookie sécurisé comme backup
+        // Si la session PHP échoue, le cookie prendra le relais
+        $cookie_value = base64_encode(json_encode(array(
+            'client_id' => $client->id,
+            'login_time' => time(),
+            'hash' => md5($client->id . $client->phone . AUTH_KEY) // Sécurité
+        )));
+
+        setcookie(
+            'colis224_client_session',
+            $cookie_value,
+            time() + (2 * 60 * 60), // 2 heures
+            COOKIEPATH,
+            COOKIE_DOMAIN,
+            is_ssl(),
+            true // HttpOnly pour la sécurité
+        );
+
         // Mettre à jour la dernière connexion du client
         $wpdb->update(
             $table_clients,
@@ -112,6 +130,20 @@ class Colis224_Client_Auth {
             unset($_SESSION['colis224_client_email']);
             unset($_SESSION['colis224_login_time']);
         }
+
+        // Supprimer aussi le cookie
+        if (isset($_COOKIE['colis224_client_session'])) {
+            setcookie(
+                'colis224_client_session',
+                '',
+                time() - 3600,
+                COOKIEPATH,
+                COOKIE_DOMAIN,
+                is_ssl(),
+                true
+            );
+            unset($_COOKIE['colis224_client_session']);
+        }
     }
 
     /**
@@ -126,15 +158,101 @@ class Colis224_Client_Auth {
                 }
             }
         }
+
+        // Supprimer aussi le cookie
+        if (isset($_COOKIE['colis224_client_session'])) {
+            setcookie(
+                'colis224_client_session',
+                '',
+                time() - 3600,
+                COOKIEPATH,
+                COOKIE_DOMAIN,
+                is_ssl(),
+                true
+            );
+            unset($_COOKIE['colis224_client_session']);
+        }
     }
 
     /**
      * Vérifier si un client est connecté
-     * 
+     *
      * @return bool
      */
     public static function is_client_logged_in() {
-        return isset($_SESSION['colis224_client_id']) && !empty($_SESSION['colis224_client_id']);
+        // Vérifier d'abord la session
+        if (isset($_SESSION['colis224_client_id']) && !empty($_SESSION['colis224_client_id'])) {
+            return true;
+        }
+
+        // Si la session n'existe pas, vérifier le cookie de backup
+        if (isset($_COOKIE['colis224_client_session'])) {
+            // Restaurer la session depuis le cookie
+            $restored = self::restore_session_from_cookie();
+            if ($restored) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Restaurer la session depuis le cookie
+     *
+     * @return bool
+     */
+    private static function restore_session_from_cookie() {
+        if (!isset($_COOKIE['colis224_client_session'])) {
+            return false;
+        }
+
+        global $wpdb;
+
+        $cookie_data = json_decode(base64_decode($_COOKIE['colis224_client_session']), true);
+
+        if (!$cookie_data || !isset($cookie_data['client_id'])) {
+            return false;
+        }
+
+        $client_id = intval($cookie_data['client_id']);
+        $login_time = isset($cookie_data['login_time']) ? intval($cookie_data['login_time']) : 0;
+        $hash = isset($cookie_data['hash']) ? $cookie_data['hash'] : '';
+
+        // Vérifier que le cookie n'est pas expiré (2 heures)
+        if (time() - $login_time > (2 * 60 * 60)) {
+            return false;
+        }
+
+        // Récupérer le client de la base de données
+        $table_clients = $wpdb->prefix . 'colis224_clients';
+        $client = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table_clients WHERE id = %d",
+            $client_id
+        ));
+
+        if (!$client) {
+            return false;
+        }
+
+        // Vérifier le hash pour la sécurité
+        $expected_hash = md5($client->id . $client->phone . AUTH_KEY);
+        if ($hash !== $expected_hash) {
+            return false;
+        }
+
+        // Restaurer la session
+        if (!session_id()) {
+            session_start();
+        }
+
+        $_SESSION['colis224_client_id'] = $client->id;
+        $_SESSION['colis224_client_name'] = $client->name;
+        $_SESSION['colis224_client_phone'] = $client->phone;
+        $_SESSION['colis224_client_email'] = $client->email;
+        $_SESSION['colis224_login_time'] = $login_time;
+
+        return true;
     }
 
     /**
