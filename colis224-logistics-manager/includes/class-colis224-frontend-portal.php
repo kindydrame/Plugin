@@ -487,15 +487,20 @@ class Colis224_Frontend_Portal {
                     $redirect_url = home_url();
                 }
 
-                // CRITIQUE: Forcer l'écriture de la session AVANT d'envoyer la réponse
-                if (session_id()) {
-                    session_write_close();
-                }
+                // SOLUTION: Ne PAS fermer la session avant wp_send_json
+                // WordPress enverra les headers automatiquement
+                // Le cookie de session sera envoyé avec la réponse
 
                 ob_end_clean();
                 wp_send_json_success(array(
                     'message' => $result['message'],
-                    'redirect_url' => $redirect_url
+                    'redirect_url' => $redirect_url,
+                    'debug' => array(
+                        'session_id' => session_id(),
+                        'cookie_path' => COOKIEPATH ? COOKIEPATH : '/',
+                        'cookie_domain' => COOKIE_DOMAIN ? COOKIE_DOMAIN : '',
+                        'is_ssl' => is_ssl()
+                    )
                 ));
             } else {
                 ob_end_clean();

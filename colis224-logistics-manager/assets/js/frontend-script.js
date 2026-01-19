@@ -6,6 +6,9 @@
     'use strict';
 
     $(document).ready(function() {
+        // DEBUG: Logger les cookies au chargement de la page
+        console.log('🌐 Page chargée - Cookies:', document.cookie);
+        console.log('🔍 Session storage:', sessionStorage.getItem('colis224_debug'));
 
         // === SUIVI DE COLIS ===
         $('#colis224-tracking-form').on('submit', function(e) {
@@ -107,8 +110,15 @@
                     client_password: $('#client_password').val()
                 },
                 success: function(response) {
-                    console.log('Réponse serveur:', response);
+                    console.log('✅ Réponse serveur:', response);
+
                     if (response.success) {
+                        // DEBUG: Afficher les infos de debug
+                        if (response.data.debug) {
+                            console.log('🔍 DEBUG INFO:', response.data.debug);
+                            console.log('🍪 Cookies actuels:', document.cookie);
+                        }
+
                         // Afficher le message de succès
                         $message.html(
                             '<div class="colis224-message colis224-message-success">' +
@@ -119,6 +129,8 @@
 
                         // Redirection après 2 secondes (laisser le temps à la session de se sauvegarder côté serveur)
                         setTimeout(function() {
+                            console.log('🔄 Redirection vers:', response.data.redirect_url);
+                            console.log('🍪 Cookies avant redirect:', document.cookie);
                             var targetUrl = response.data.redirect_url || window.location.href;
                             // Forcer le rechargement complet de la page (supprime l'historique)
                             window.location.replace(targetUrl);

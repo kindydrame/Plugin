@@ -201,18 +201,23 @@ class Colis224_Client_Auth {
      * @return bool
      */
     public static function is_client_logged_in() {
-        // Vérifier d'abord la session
-        if (isset($_SESSION['colis224_client_id']) && !empty($_SESSION['colis224_client_id'])) {
-            return true;
-        }
-
-        // Si la session n'existe pas, vérifier le cookie de backup
+        // PRIORITÉ AU COOKIE: Plus fiable après redirections AJAX
         if (isset($_COOKIE['colis224_client_session'])) {
-            // Restaurer la session depuis le cookie
-            $restored = self::restore_session_from_cookie();
-            if ($restored) {
+            // Restaurer la session depuis le cookie si nécessaire
+            if (!isset($_SESSION['colis224_client_id']) || empty($_SESSION['colis224_client_id'])) {
+                $restored = self::restore_session_from_cookie();
+                if ($restored) {
+                    return true;
+                }
+            } else {
+                // Cookie et session existent tous les deux
                 return true;
             }
+        }
+
+        // Vérifier la session en dernier recours
+        if (isset($_SESSION['colis224_client_id']) && !empty($_SESSION['colis224_client_id'])) {
+            return true;
         }
 
         return false;
@@ -225,6 +230,7 @@ class Colis224_Client_Auth {
      */
     private static function restore_session_from_cookie() {
         if (!isset($_COOKIE['colis224_client_session'])) {
+            error_log('COLIS224 RESTORE: Cookie absent');
             return false;
         }
 
@@ -233,6 +239,7 @@ class Colis224_Client_Auth {
         $cookie_data = json_decode(base64_decode($_COOKIE['colis224_client_session']), true);
 
         if (!$cookie_data || !isset($cookie_data['client_id'])) {
+            error_log('COLIS224 RESTORE: Cookie invalide - ' . print_r($cookie_data, true));
             return false;
         }
 
@@ -242,6 +249,7 @@ class Colis224_Client_Auth {
 
         // Vérifier que le cookie n'est pas expiré (2 heures)
         if (time() - $login_time > (2 * 60 * 60)) {
+            error_log('COLIS224 RESTORE: Cookie expiré');
             return false;
         }
 
@@ -253,12 +261,14 @@ class Colis224_Client_Auth {
         ));
 
         if (!$client) {
+            error_log('COLIS224 RESTORE: Client ID=' . $client_id . ' introuvable en BDD');
             return false;
         }
 
         // Vérifier le hash pour la sécurité
         $expected_hash = md5($client->id . $client->phone . AUTH_KEY);
         if ($hash !== $expected_hash) {
+            error_log('COLIS224 RESTORE: Hash invalide - Expected=' . $expected_hash . ', Got=' . $hash);
             return false;
         }
 
@@ -276,6 +286,8 @@ class Colis224_Client_Auth {
         $_SESSION['colis224_client_phone'] = $client->phone;
         $_SESSION['colis224_client_email'] = $client->email;
         $_SESSION['colis224_login_time'] = $login_time;
+
+        error_log('COLIS224 RESTORE: SUCCESS - Client ID=' . $client->id . ', Session ID=' . session_id());
 
         return true;
     }
