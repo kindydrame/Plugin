@@ -113,14 +113,16 @@
                         $message.html(
                             '<div class="colis224-message colis224-message-success">' +
                             response.data.message +
+                            '<br><small>Redirection en cours...</small>' +
                             '</div>'
                         );
 
-                        // Redirection après 1 seconde
+                        // Redirection après 1.5 secondes (laisser le temps à la session de se sauvegarder)
                         setTimeout(function() {
                             var targetUrl = response.data.redirect_url || window.location.href;
-                            window.location.href = targetUrl;
-                        }, 1000);
+                            // Forcer le rechargement complet de la page
+                            window.location.replace(targetUrl);
+                        }, 1500);
                     } else {
                         // Afficher le message d'erreur
                         $message.html(

@@ -184,23 +184,7 @@ class Colis224_Settings {
                             <input type="checkbox" id="sms_notifications" name="sms_notifications" value="1"
                                    <?php checked(get_option('colis224_sms_notifications', '0'), '1'); ?>>
                             <label for="sms_notifications">Activer les notifications par SMS</label>
-                            <p class="description">Nécessite configuration d'une API SMS</p>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th><label for="sms_api_url">URL API SMS</label></th>
-                        <td>
-                            <input type="url" id="sms_api_url" name="sms_api_url" class="large-text"
-                                   value="<?php echo esc_attr(get_option('colis224_sms_api_url', '')); ?>">
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th><label for="sms_api_key">Clé API SMS</label></th>
-                        <td>
-                            <input type="text" id="sms_api_key" name="sms_api_key" class="regular-text"
-                                   value="<?php echo esc_attr(get_option('colis224_sms_api_key', '')); ?>">
+                            <p class="description">📱 Configurez votre fournisseur SMS dans l'onglet <a href="?page=colis224-settings&tab=sms" style="font-weight: bold; color: #2271b1;">Configuration SMS</a></p>
                         </td>
                     </tr>
                 </table>
