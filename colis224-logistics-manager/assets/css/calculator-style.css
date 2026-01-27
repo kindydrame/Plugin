@@ -1,0 +1,464 @@
+/**
+ * Colis224 Logistics Manager - Styles Calculateur de Tarif
+ *
+ * @version 2.17.0
+ */
+
+/* === CONTENEUR PRINCIPAL === */
+.colis224-calculator-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
+}
+
+/* === EN-TÊTE === */
+.colis224-calculator-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.colis224-calculator-header h2 {
+    font-size: 32px;
+    color: #1d2327;
+    margin: 0 0 15px 0;
+}
+
+.colis224-calculator-header p {
+    color: #646970;
+    font-size: 16px;
+    margin: 0;
+}
+
+/* === FORMULAIRE === */
+.colis224-calculator-form {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+}
+
+/* === SECTIONS DU FORMULAIRE === */
+.colis224-form-section {
+    margin-bottom: 35px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid #e1e4e8;
+}
+
+.colis224-form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 20px;
+}
+
+.colis224-form-section h3 {
+    font-size: 20px;
+    color: #1d2327;
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #2271b1;
+    display: inline-block;
+}
+
+/* === LIGNES DE FORMULAIRE === */
+.colis224-form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+@media (max-width: 600px) {
+    .colis224-form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* === GROUPES DE CHAMPS === */
+.colis224-form-group {
+    margin-bottom: 5px;
+}
+
+.colis224-form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #1d2327;
+    font-size: 14px;
+}
+
+.colis224-form-group .required {
+    color: #d63638;
+}
+
+.colis224-form-group input,
+.colis224-form-group select,
+.colis224-form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    border: 2px solid #e1e4e8;
+    border-radius: 8px;
+    outline: none;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    background-color: #fff;
+}
+
+.colis224-form-group input:focus,
+.colis224-form-group select:focus,
+.colis224-form-group textarea:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.15);
+}
+
+.colis224-form-group input::placeholder,
+.colis224-form-group textarea::placeholder {
+    color: #a0a5aa;
+}
+
+.colis224-form-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23646970' d='M6 8.825L1.175 4 2.238 2.938 6 6.7l3.763-3.762L10.825 4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    padding-right: 40px;
+}
+
+.colis224-form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* === BOUTONS D'ACTION === */
+.colis224-form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.colis224-btn {
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 180px;
+}
+
+.colis224-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.colis224-btn-primary {
+    background: linear-gradient(135deg, #2271b1 0%, #135e96 100%);
+    color: #fff;
+}
+
+.colis224-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #135e96 0%, #0a4b78 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(34, 113, 177, 0.4);
+}
+
+.colis224-btn-success {
+    background: linear-gradient(135deg, #00a32a 0%, #007a1f 100%);
+    color: #fff;
+}
+
+.colis224-btn-success:hover:not(:disabled) {
+    background: linear-gradient(135deg, #007a1f 0%, #005a16 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 163, 42, 0.4);
+}
+
+/* === RÉSULTAT DU CALCUL === */
+.colis224-calculator-result {
+    background: linear-gradient(135deg, #f0f7fc 0%, #e3f2fd 100%);
+    border: 2px solid #2271b1;
+    border-radius: 12px;
+    margin-top: 30px;
+    overflow: hidden;
+}
+
+.colis224-calculator-result .result-header {
+    background: #2271b1;
+    color: #fff;
+    padding: 15px 25px;
+}
+
+.colis224-calculator-result .result-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.colis224-calculator-result .result-body {
+    padding: 25px;
+}
+
+.colis224-calculator-result .result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px dashed #c3d4e0;
+}
+
+.colis224-calculator-result .result-item:last-child {
+    border-bottom: none;
+}
+
+.colis224-calculator-result .result-item .label {
+    color: #50575e;
+    font-size: 15px;
+}
+
+.colis224-calculator-result .result-item .value {
+    font-weight: 600;
+    color: #1d2327;
+    font-size: 16px;
+}
+
+.colis224-calculator-result .result-total {
+    background: #fff;
+    margin: 15px -25px -25px -25px;
+    padding: 20px 25px;
+    border-top: 2px solid #2271b1;
+}
+
+.colis224-calculator-result .result-total .label {
+    font-weight: 600;
+    color: #1d2327;
+    font-size: 18px;
+}
+
+.colis224-calculator-result .result-total .value {
+    font-size: 24px;
+    color: #2271b1;
+}
+
+.colis224-calculator-result .result-note {
+    margin: 20px 25px 0 25px;
+    padding-top: 15px;
+    border-top: 1px solid #c3d4e0;
+    color: #646970;
+    font-size: 13px;
+    font-style: italic;
+}
+
+/* === MESSAGES === */
+.colis224-calculator-message {
+    display: none;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-size: 15px;
+}
+
+.colis224-calculator-message .dashicons {
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.colis224-calculator-message.success {
+    background-color: #d4f4dd;
+    border: 1px solid #00a32a;
+    color: #0f5323;
+}
+
+.colis224-calculator-message.error {
+    background-color: #ffebee;
+    border: 1px solid #d63638;
+    color: #8b1a1a;
+}
+
+/* === SECTION WECHAT === */
+.colis224-wechat-section {
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+    border-radius: 12px;
+    padding: 40px;
+    margin-top: 40px;
+    text-align: center;
+    color: #fff;
+}
+
+.colis224-wechat-section h3 {
+    font-size: 24px;
+    margin: 0 0 10px 0;
+    color: #fff;
+}
+
+.colis224-wechat-section p {
+    margin: 0 0 25px 0;
+    opacity: 0.9;
+    font-size: 16px;
+}
+
+.wechat-qr-container {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    display: inline-block;
+    max-width: 280px;
+}
+
+.wechat-qr-image {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.wechat-qr-placeholder {
+    padding: 40px 20px;
+    color: #646970;
+    font-style: italic;
+}
+
+.wechat-note {
+    margin-top: 20px !important;
+    font-size: 14px !important;
+    opacity: 0.8;
+}
+
+/* === SECTION INSTRUCTIONS === */
+.colis224-instructions-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 30px;
+    margin-top: 40px;
+}
+
+.colis224-instructions-section h3 {
+    font-size: 20px;
+    color: #1d2327;
+    margin: 0 0 20px 0;
+}
+
+.instructions-container {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.instructions-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.instruction-image {
+    text-align: center;
+}
+
+.instruction-image img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.instruction-image .caption {
+    margin-top: 10px;
+    color: #646970;
+    font-size: 14px;
+}
+
+.instructions-placeholder {
+    background: #fff8e1;
+    border: 2px dashed #ffb300;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    color: #e65100;
+}
+
+.instructions-placeholder p:first-child {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.instructions-placeholder p:last-child {
+    margin: 0;
+    color: #8d6e63;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .colis224-calculator-container {
+        padding: 0 15px;
+    }
+
+    .colis224-calculator-form {
+        padding: 25px;
+    }
+
+    .colis224-calculator-header h2 {
+        font-size: 26px;
+    }
+
+    .colis224-form-actions {
+        flex-direction: column;
+    }
+
+    .colis224-btn {
+        width: 100%;
+    }
+
+    .colis224-calculator-result .result-total .value {
+        font-size: 20px;
+    }
+
+    .colis224-wechat-section {
+        padding: 30px 20px;
+    }
+
+    .colis224-wechat-section h3 {
+        font-size: 20px;
+    }
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.colis224-calculator-result {
+    animation: fadeIn 0.3s ease;
+}
+
+.colis224-calculator-message {
+    animation: fadeIn 0.2s ease;
+}
+
+/* === LOADER === */
+.colis224-btn .colis224-loader {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
