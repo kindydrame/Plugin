@@ -1,0 +1,199 @@
+/**
+ * Système de Notifications Toast Moderne
+ * Version 2.16.0 - Sprint 6
+ */
+
+/* Container des toasts */
+.colis224-toast-container {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    z-index: 999999;
+    pointer-events: none;
+    max-width: 400px;
+}
+
+/* Toast individuel */
+.colis224-toast {
+    background: white;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: all;
+    transform: translateX(400px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    border-left: 4px solid #3b82f6;
+    position: relative;
+    overflow: hidden;
+    min-width: 320px;
+}
+
+.colis224-toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.colis224-toast.hide {
+    transform: translateX(400px);
+    opacity: 0;
+}
+
+/* Barre de progression */
+.colis224-toast::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: currentColor;
+    width: 100%;
+    transform-origin: left;
+    animation: toastProgress 5s linear forwards;
+}
+
+@keyframes toastProgress {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}
+
+/* Types de toasts */
+.colis224-toast.success {
+    border-left-color: #10b981;
+    color: #10b981;
+}
+
+.colis224-toast.error {
+    border-left-color: #ef4444;
+    color: #ef4444;
+}
+
+.colis224-toast.warning {
+    border-left-color: #f59e0b;
+    color: #f59e0b;
+}
+
+.colis224-toast.info {
+    border-left-color: #3b82f6;
+    color: #3b82f6;
+}
+
+/* Icône du toast */
+.colis224-toast-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.colis224-toast.success .colis224-toast-icon {
+    background: #d1fae5;
+    color: #10b981;
+}
+
+.colis224-toast.error .colis224-toast-icon {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.colis224-toast.warning .colis224-toast-icon {
+    background: #fef3c7;
+    color: #f59e0b;
+}
+
+.colis224-toast.info .colis224-toast-icon {
+    background: #dbeafe;
+    color: #3b82f6;
+}
+
+/* Contenu du toast */
+.colis224-toast-content {
+    flex: 1;
+    color: #1f2937;
+}
+
+.colis224-toast-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.colis224-toast-message {
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+/* Bouton de fermeture */
+.colis224-toast-close {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: #f3f4f6;
+    color: #6b7280;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.colis224-toast-close:hover {
+    background: #e5e7eb;
+    color: #1f2937;
+    transform: rotate(90deg);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .colis224-toast-container {
+        top: 50px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+
+    .colis224-toast {
+        min-width: auto;
+        width: 100%;
+    }
+}
+
+/* Animation de shake pour les erreurs */
+.colis224-toast.error.show {
+    animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Animation de bounce pour les succès */
+.colis224-toast.success .colis224-toast-icon {
+    animation: bounce 0.6s ease;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-8px); }
+    60% { transform: translateY(-4px); }
+}

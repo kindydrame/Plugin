@@ -1,0 +1,1225 @@
+/**
+ * CSS pour le slider de départs Colis224 - Version 2.10.5
+ * Design ultra-moderne avec animations fluides et mode sombre/clair
+ * Layout pleine largeur mobile-friendly avec cadres bien définis
+ * Uniformisation des boutons + bouton thème flottant + debug abonnement email
+ */
+
+:root {
+    /* Gradients modernes */
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --success-gradient: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+    --soft-gradient: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+    --glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+
+    /* Couleurs */
+    --card-bg: #ffffff;
+    --text-primary: #1a202c;
+    --text-secondary: #718096;
+    --border-color: rgba(102, 126, 234, 0.1);
+
+    /* Effets */
+    --hover-shadow: 0 12px 40px rgba(102, 126, 234, 0.25);
+    --glass-shadow: 0 8px 32px 0 rgba(102, 126, 234, 0.15);
+    --elevated-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+}
+
+/* Mode sombre */
+.colis224-departures-container.dark-mode {
+    --card-bg: #2d3748;
+    --text-primary: #f7fafc;
+    --text-secondary: #cbd5e0;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --glass-gradient: linear-gradient(135deg, rgba(45, 55, 72, 0.9) 0%, rgba(45, 55, 72, 0.7) 100%);
+}
+
+.colis224-departures-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 40px 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+/* Fond décoratif moderne */
+.colis224-departures-container::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #667eea08 0%, #764ba208 50%, transparent 100%);
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Cercles décoratifs en arrière-plan */
+.colis224-departures-container::after {
+    content: '';
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* ========== FILTRES MODERNES STYLE PROFESSIONNEL ========== */
+.colis224-departures-filters {
+    position: relative;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 24px;
+    padding: 32px;
+    margin-bottom: 40px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    border: 2px solid rgba(102, 126, 234, 0.1);
+    transition: all 0.3s ease;
+    overflow: visible;
+}
+
+.colis224-departures-filters::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: var(--soft-gradient);
+    opacity: 0.5;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.colis224-departures-filters > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* ========== LAYOUT PLEINE LARGEUR - MOBILE FRIENDLY ========== */
+
+/* Ligne 1: Recherche pleine largeur */
+.filter-row-fullwidth {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.search-input-fullwidth {
+    width: 100%;
+    padding: 20px 28px;
+    border: 3px solid rgba(102, 126, 234, 0.2);
+    border-radius: 16px;
+    background: var(--card-bg);
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+}
+
+.search-input-fullwidth::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+.search-input-fullwidth:hover {
+    border-color: #667eea;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+    transform: translateY(-1px);
+}
+
+.search-input-fullwidth:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.25);
+    transform: translateY(-2px);
+}
+
+/* Ligne 2: Filtres secondaires en rangée */
+.filter-row-secondary {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+    flex-wrap: wrap;
+}
+
+/* Select pour les filtres (mois, pays, etc) */
+.filter-select {
+    padding: 16px 48px 16px 20px;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 14px;
+    background: var(--card-bg);
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    color: var(--text-primary);
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 18px;
+    min-width: 180px;
+}
+
+.filter-select:hover {
+    border-color: #667eea;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+    transform: translateY(-1px);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.25);
+    transform: translateY(-2px);
+}
+
+/* Boutons d'action (filtres, vue, mode sombre) */
+.btn-filter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 24px;
+    height: auto;
+    background: var(--primary-gradient);
+    color: white;
+    border: 2px solid transparent;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.btn-filter::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+.btn-filter:hover::before {
+    left: 100%;
+}
+
+.btn-filter:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+}
+
+.btn-filter:active {
+    transform: translateY(-1px);
+}
+
+.btn-filter .toggle-arrow {
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 14px;
+}
+
+#btn-toggle-advanced.active .toggle-arrow {
+    transform: rotate(180deg);
+}
+
+/* ========== BOUTON THÈME FLOTTANT ========== */
+.btn-theme-floating {
+    position: fixed;
+    bottom: 100px;
+    right: 40px;
+    width: 56px;
+    height: 56px;
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-theme-floating:hover {
+    transform: scale(1.1) rotate(15deg);
+    box-shadow: 0 12px 32px rgba(102, 126, 234, 0.6);
+}
+
+.btn-theme-floating:active {
+    transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+    .btn-theme-floating {
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+}
+
+/* ========== RESPONSIVE MOBILE FRIENDLY ========== */
+@media (max-width: 768px) {
+    .colis224-departures-filters {
+        padding: 24px 20px;
+        border-radius: 20px;
+    }
+
+    .filter-row-fullwidth {
+        margin-bottom: 16px;
+    }
+
+    .search-input-fullwidth {
+        padding: 18px 24px;
+        font-size: 15px;
+        border-radius: 14px;
+    }
+
+    .filter-row-secondary {
+        flex-direction: column;
+        width: 100%;
+        gap: 12px;
+    }
+
+    .filter-select {
+        width: 100%;
+        min-width: 100%;
+        padding: 16px 48px 16px 20px;
+    }
+
+    .btn-filter {
+        width: 100%;
+        justify-content: center;
+        padding: 16px 20px;
+    }
+
+    .btn-filter .btn-text {
+        display: inline;
+    }
+}
+
+@media (max-width: 480px) {
+    .colis224-departures-filters {
+        padding: 20px 16px;
+    }
+
+    .search-input-fullwidth {
+        padding: 16px 20px;
+        font-size: 14px;
+    }
+
+    .filter-select {
+        padding: 14px 40px 14px 16px;
+        font-size: 14px;
+    }
+
+    .btn-filter {
+        padding: 14px 18px;
+        font-size: 14px;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Actions rapides - Design moderne */
+.quick-actions {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
+}
+
+.btn-icon {
+    width: 58px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 22px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-icon::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: var(--soft-gradient);
+    transition: width 0.4s, height 0.4s, top 0.4s, left 0.4s;
+}
+
+.btn-icon:hover::before {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    border-radius: 16px;
+}
+
+.btn-icon:hover {
+    border-color: #667eea;
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.25);
+}
+
+.btn-icon > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Section filtres avancés - Design premium */
+.filter-advanced-section {
+    margin-top: 28px;
+    padding-top: 28px;
+    border-top: 2px dashed var(--border-color);
+    animation: slideDown 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 500px;
+    }
+}
+
+.filter-advanced-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.filter-item-minimal {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.filter-item-minimal label {
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-item-minimal select {
+    padding: 16px 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 18px;
+    background: var(--card-bg);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 18px;
+    padding-right: 46px;
+}
+
+.filter-item-minimal select:hover {
+    border-color: #667eea;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+    transform: translateY(-2px);
+}
+
+.filter-item-minimal select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.25);
+    transform: translateY(-2px);
+}
+
+.btn-reset-minimal {
+    width: 100%;
+    padding: 16px 22px;
+    background: var(--secondary-gradient);
+    color: white;
+    border: none;
+    border-radius: 18px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-top: 10px;
+    box-shadow: 0 8px 24px rgba(240, 147, 251, 0.35);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-reset-minimal::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+.btn-reset-minimal:hover::before {
+    left: 100%;
+}
+
+.btn-reset-minimal:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(240, 147, 251, 0.4);
+}
+
+/* Filtres actifs - Design moderne avec badges */
+.active-filters-minimal {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 2px dashed var(--border-color);
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.active-filters-minimal .filter-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.filter-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px;
+    background: var(--primary-gradient);
+    color: white;
+    border-radius: 28px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    animation: fadeInTag 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 6px 18px rgba(102, 126, 234, 0.35);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.filter-tag::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+}
+
+.filter-tag:hover::before {
+    transform: translateX(100%);
+}
+
+.filter-tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+@keyframes fadeInTag {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.filter-tag-remove {
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    margin-left: 4px;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.filter-tag-remove:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg) scale(1.1);
+}
+
+/* ANCIEN CODE SUPPRIMÉ - Remplacé par le nouveau design minimal ci-dessus */
+
+/* ========== ZONE D'AFFICHAGE ========== */
+.colis224-departures-display {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+    background: #f8f9fa;
+    padding: 30px 0;
+    min-height: 400px;
+}
+
+/* Mode Slider */
+.departures-slider {
+    display: flex;
+    gap: 24px;
+    padding: 0 24px;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.departures-slider.auto-scroll {
+    animation: slide linear infinite;
+}
+
+.departures-slider.paused {
+    animation-play-state: paused !important;
+}
+
+@keyframes slide {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(calc(-100% - 24px)); }
+}
+
+/* Mode Grille */
+.departures-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+    padding: 0 24px;
+}
+
+/* Mode Liste */
+.departures-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0 24px;
+}
+
+.departures-list .departure-card {
+    min-width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.departures-list .departure-route {
+    flex-direction: row;
+    gap: 20px;
+}
+
+/* ========== CARTES DE DÉPART ========== */
+.departure-card {
+    min-width: 360px;
+    max-width: 420px;
+    background: var(--card-bg);
+    border-radius: 28px;
+    padding: 32px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    border: 2px solid transparent;
+}
+
+.departure-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: var(--primary-gradient);
+    border-radius: 28px 28px 0 0;
+}
+
+.departure-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+    border-color: #667eea;
+}
+
+/* Header de la carte */
+.departure-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.transport-badge {
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    letter-spacing: 0.3px;
+}
+
+.transport-plane {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.transport-boat {
+    background: linear-gradient(135deg, #06beb6 0%, #48b1bf 100%);
+    color: white;
+}
+
+.badge-urgent {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: white;
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    animation: pulse 2s infinite;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.03); }
+}
+
+/* Route */
+.departure-route {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 24px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 20px;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.route-point {
+    text-align: center;
+    flex: 1;
+}
+
+.route-point .flag {
+    font-size: 36px;
+    margin-bottom: 8px;
+}
+
+.route-point .city {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.route-point .country {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.route-arrow {
+    font-size: 28px;
+    color: #667eea;
+    font-weight: bold;
+    margin: 0 12px;
+}
+
+/* Informations du départ */
+.departure-info {
+    margin-bottom: 24px;
+    padding: 20px;
+    background: rgba(102, 126, 234, 0.06);
+    border-radius: 18px;
+    border-left: 5px solid #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
+}
+
+.departure-date,
+.departure-duration,
+.departure-price,
+.departure-seats {
+    font-size: 15px;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+}
+
+.departure-date:last-child,
+.departure-duration:last-child,
+.departure-price:last-child,
+.departure-seats:last-child {
+    margin-bottom: 0;
+}
+
+.departure-price {
+    font-weight: 800;
+    font-size: 18px;
+    color: #667eea;
+    letter-spacing: 0.3px;
+}
+
+/* Bouton WhatsApp */
+.btn-whatsapp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    max-width: 100%;
+    padding: 10px 14px;
+    background: var(--success-gradient);
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.2px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(37, 211, 102, 0.25);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.btn-whatsapp::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-whatsapp:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-whatsapp:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 32px rgba(37, 211, 102, 0.45);
+}
+
+/* ========== MESSAGE AUCUN RÉSULTAT ========== */
+.no-departures {
+    text-align: center;
+    padding: 60px 40px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.no-results-icon {
+    font-size: 72px;
+    margin-bottom: 20px;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.no-departures h3 {
+    font-size: 28px;
+    color: var(--text-primary);
+    margin: 0 0 12px 0;
+}
+
+.no-departures p {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin: 0 0 12px 0;
+}
+
+.suggestion {
+    background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+    padding: 16px 20px;
+    border-radius: 12px;
+    border-left: 4px solid #fb923c;
+    margin: 24px 0 !important;
+}
+
+.contact-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin: 30px 0;
+    flex-wrap: wrap;
+}
+
+.btn-contact {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 30px;
+    border-radius: 16px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    min-width: 250px;
+}
+
+.btn-guinea {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.btn-international {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.btn-contact:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.btn-icon {
+    font-size: 32px;
+}
+
+.btn-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.btn-content strong {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.btn-content span {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.no-results-footer {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid #e2e8f0;
+}
+
+.no-results-footer p {
+    font-size: 14px;
+    margin: 8px 0;
+}
+
+.no-results-footer a {
+    color: #667eea;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.no-results-footer a:hover {
+    text-decoration: underline;
+}
+
+/* ========== FORMULAIRE ABONNEMENT EMAIL ========== */
+.email-notification-banner {
+    margin: 30px 0;
+    opacity: 1;
+    visibility: visible;
+}
+
+.email-notification-banner input[type="email"] {
+    box-sizing: border-box;
+}
+
+.email-notification-banner button {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.email-notification-banner button:hover {
+    opacity: 0.9;
+    transform: scale(1.02);
+}
+
+/* ========== LOADING ========== */
+.departures-loading {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+    .colis224-departures-container {
+        padding: 0 16px;
+        margin: 20px auto;
+    }
+
+    .colis224-departures-filters {
+        padding: 16px;
+    }
+
+    .filter-main-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-search-minimal,
+    .filter-month-minimal {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    .btn-toggle-advanced {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .quick-actions {
+        width: 100%;
+        justify-content: space-between;
+        margin-left: 0;
+        margin-top: 8px;
+    }
+
+    .filter-advanced-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .departure-card {
+        min-width: 300px;
+        max-width: 100%;
+    }
+
+    .departures-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-buttons {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .btn-contact {
+        min-width: 100%;
+    }
+}
+
+/* ========== MODE SOMBRE ========== */
+.dark-mode .colis224-departures-filters {
+    background: #2d3748;
+    border-color: #4a5568;
+}
+
+.dark-mode .departure-card {
+    background: #2d3748;
+    color: #f7fafc;
+}
+
+.dark-mode .departure-route {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+}
+
+.dark-mode .departure-info {
+    background: rgba(102, 126, 234, 0.15);
+}
+
+.dark-mode .no-departures {
+    background: #2d3748;
+}
+
+.dark-mode .no-departures h3 {
+    color: #f7fafc;
+}
+
+.dark-mode .suggestion {
+    background: linear-gradient(135deg, #7c2d12 0%, #9a3412 100%);
+    color: #fed7aa;
+}
+
+.dark-mode .no-results-footer {
+    border-top-color: #4a5568;
+}
+
+/* ========== FLÈCHES DE NAVIGATION SLIDER ========== */
+.slider-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    background: var(--glass-gradient);
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
+}
+
+.slider-arrow:hover {
+    background: var(--primary-gradient);
+    border-color: rgba(102, 126, 234, 0.4);
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.slider-arrow:hover svg {
+    stroke: white;
+}
+
+.slider-arrow:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.slider-arrow svg {
+    stroke: #667eea;
+    transition: stroke 0.3s ease;
+}
+
+.slider-arrow-left {
+    left: -25px;
+}
+
+.slider-arrow-right {
+    right: -25px;
+}
+
+/* Masquer les flèches en mode grid/list */
+.departures-grid .slider-arrow,
+.departures-list .slider-arrow {
+    display: none;
+}
+
+/* Responsive mobile */
+@media (max-width: 768px) {
+    .slider-arrow {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .slider-arrow-left {
+        left: 10px;
+    }
+    
+    .slider-arrow-right {
+        right: 10px;
+    }
+}
+
+/* Mode sombre pour les flèches */
+.dark-mode .slider-arrow {
+    background: linear-gradient(135deg, rgba(45, 55, 72, 0.9) 0%, rgba(45, 55, 72, 0.7) 100%);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark-mode .slider-arrow:hover {
+    background: var(--primary-gradient);
+}
+
+.dark-mode .slider-arrow svg {
+    stroke: #cbd5e0;
+}
+
+/* Mode d'impression */
+@media print {
+    .colis224-departures-filters,
+    .btn-whatsapp,
+    .btn-contact {
+        display: none;
+    }
+
+    .departure-card {
+        page-break-inside: avoid;
+    }
+}
