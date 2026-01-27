@@ -3,7 +3,7 @@
  * Plugin Name: Colis224 Logistics Manager
  * Plugin URI: https://colis224.com
  * Description: Système complet de gestion logistique pour entreprise de livraison internationale (Chine, France, Maroc, Sénégal, Côte d'Ivoire, Guinée)
- * Version: 2.16.6
+ * Version: 2.17.0
  * Author: Colis224
  * Author URI: https://colis224.com
  * License: GPL-2.0+
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Constantes du plugin
-define('COLIS224_VERSION', '2.16.6');
+define('COLIS224_VERSION', '2.17.0');
 define('COLIS224_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('COLIS224_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('COLIS224_PLUGIN_BASENAME', plugin_basename(__FILE__));
