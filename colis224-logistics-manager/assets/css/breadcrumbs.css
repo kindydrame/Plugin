@@ -1,0 +1,109 @@
+/**
+ * Breadcrumbs de Navigation
+ * Version 2.16.0 - Sprint 6
+ */
+
+.colis224-breadcrumbs {
+    background: white;
+    padding: 12px 20px;
+    margin: -20px -20px 20px -20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.colis224-breadcrumb-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.colis224-breadcrumb-link {
+    color: #3b82f6;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.colis224-breadcrumb-link:hover {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.colis224-breadcrumb-separator {
+    color: #d1d5db;
+    user-select: none;
+}
+
+.colis224-breadcrumb-current {
+    color: #1f2937;
+    font-weight: 500;
+    padding: 4px 8px;
+}
+
+/* Icône home */
+.colis224-breadcrumb-home {
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* Actions rapides dans breadcrumbs */
+.colis224-breadcrumb-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+}
+
+.colis224-breadcrumb-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 6px;
+    color: #374151;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.colis224-breadcrumb-action:hover {
+    background: #e5e7eb;
+    color: #1f2937;
+}
+
+.colis224-breadcrumb-action.primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.colis224-breadcrumb-action.primary:hover {
+    background: #2563eb;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .colis224-breadcrumbs {
+        flex-wrap: wrap;
+        padding: 10px 15px;
+        margin: -15px -15px 15px -15px;
+    }
+
+    .colis224-breadcrumb-actions {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 8px;
+        justify-content: flex-start;
+    }
+
+    .colis224-breadcrumb-item {
+        font-size: 12px;
+    }
+}
