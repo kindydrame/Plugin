@@ -30,8 +30,10 @@ Système complet de gestion logistique pour entreprise de livraison internationa
 * 🐛 BUGFIX: Correction affichage images par mode (avion/bateau)
 * CORRIGÉ: Images d'adresse affichées séparément des instructions shipping mark
 * CORRIGÉ: Alertes admin n'affichent plus les colis déjà payés
+* CORRIGÉ: Onglet Tarifs maintenant visible pour les agents
 * AMÉLIORATION: Meilleure gestion erreurs AJAX avec messages spécifiques
 * AMÉLIORATION: Vérification existence table avant insertion
+* AMÉLIORATION: Permissions pages colis224-pricing et colis224-frontend-requests
 * AJOUT: Élément #address-image pour image d'adresse par mode
 
 = 2.20.11 =

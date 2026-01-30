@@ -115,6 +115,8 @@ class Colis224_Permissions {
                 'colis224-accounting' => 'colis224_manage_accounting',
                 'colis224-reports' => 'colis224_view_reports',
                 'colis224-settings' => 'colis224_manage_all',
+                'colis224-pricing' => 'colis224_view_parcels', // v2.20.12: Accessible aux agents
+                'colis224-frontend-requests' => 'colis224_view_parcels', // v2.20.12: Accessible aux agents
             );
 
             if (isset($page_permissions[$page])) {

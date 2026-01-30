@@ -41,6 +41,8 @@ class Colis224_Admin {
             'colis224-duplicates' => 'colis224_manage_all',
             'colis224-batches' => 'colis224_manage_all',
             'colis224-csv-import' => 'colis224_manage_all',
+            'colis224-pricing' => 'colis224_view_parcels', // v2.20.12: Accessible aux agents
+            'colis224-frontend-requests' => 'colis224_view_parcels', // v2.20.12: Accessible aux agents
         );
 
         // Si la page nécessite manage_options, on la garde
