@@ -1,0 +1,110 @@
+/**
+ * CSS pour le widget de départs dans la sidebar
+ * Design compact et élégant
+ */
+
+.colis224-departures-widget {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.colis224-widget-departures {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.widget-departure-item {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 16px;
+    border-left: 4px solid #667eea;
+    transition: all 0.3s ease;
+}
+
+.widget-departure-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.widget-departure-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.widget-transport-icon {
+    font-size: 20px;
+}
+
+.widget-departure-date {
+    font-size: 12px;
+    font-weight: 600;
+    color: #667eea;
+    background: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.widget-departure-route {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 13px;
+}
+
+.widget-route-point {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+}
+
+.widget-route-point strong {
+    color: #212529;
+}
+
+.widget-route-arrow {
+    margin: 0 8px;
+    color: #667eea;
+    font-weight: 700;
+}
+
+.widget-departure-price {
+    font-size: 14px;
+    font-weight: 700;
+    color: #28a745;
+    margin-bottom: 10px;
+}
+
+.widget-btn-whatsapp {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    transition: all 0.3s ease;
+}
+
+.widget-btn-whatsapp:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+.widget-no-departures {
+    text-align: center;
+    padding: 30px 15px;
+    font-size: 14px;
+    color: #6c757d;
+}
