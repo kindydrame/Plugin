@@ -34,6 +34,26 @@ class Colis224_Permissions {
             'colis224_manage_clients' => true,
         ));
         
+        // v2.20.12: Forcer la mise à jour des capabilities des agents
+        // Supprimer et recréer le rôle si la version a changé
+        $current_role_version = get_option('colis224_role_version', '0');
+        $target_role_version = '2.20.12';
+
+        if (version_compare($current_role_version, $target_role_version, '<')) {
+            // Supprimer le rôle agent existant pour le recréer avec les bonnes capabilities
+            remove_role('colis224_agent');
+
+            // Recréer le rôle avec toutes les capabilities
+            add_role('colis224_agent', 'Agent Colis224', array(
+                'read' => true,
+                'colis224_create_parcel' => true,
+                'colis224_view_parcels' => true,
+                'colis224_manage_clients' => true,
+            ));
+
+            update_option('colis224_role_version', $target_role_version);
+        }
+
         // S'assurer que le rôle agent existe et a les bonnes capabilities
         $agent_role = get_role('colis224_agent');
         if ($agent_role) {

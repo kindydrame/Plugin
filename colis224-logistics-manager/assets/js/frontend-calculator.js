@@ -1039,6 +1039,11 @@ Téléphone : ${formattedPhone}`;
      * Sauvegarder les données du formulaire
      */
     function saveFormData() {
+        // v2.20.12: Préserver shipping_mark, pa_code et agency qui sont définis ailleurs
+        const existingShippingMark = AppState.formData.shipping_mark || '';
+        const existingPaCode = AppState.formData.pa_code || '';
+        const existingAgency = AppState.formData.agency || '';
+
         AppState.formData = {
             nom: $('#client_nom').val().trim(),
             prenom: $('#client_prenom').val().trim(),
@@ -1052,7 +1057,9 @@ Téléphone : ${formattedPhone}`;
             delai: $('#cas1_delai').val().trim(),
             panier_details: $('#cas3_panier').val().trim(),
             site_achat: $('#cas3_site').val().trim(),
-            agency: AppState.formData.agency || ''
+            shipping_mark: existingShippingMark,
+            pa_code: existingPaCode,
+            agency: existingAgency
         };
 
         // Update summaries

@@ -27,13 +27,16 @@ Système complet de gestion logistique pour entreprise de livraison internationa
 == Changelog ==
 
 = 2.20.12 =
+* 🐛 BUGFIX: Correction erreur "Une erreur est survenue" à la confirmation
+* 🐛 BUGFIX: Correction saveFormData() qui écrasait shipping_mark et pa_code
 * 🐛 BUGFIX: Correction affichage images par mode (avion/bateau)
 * CORRIGÉ: Images d'adresse affichées séparément des instructions shipping mark
 * CORRIGÉ: Alertes admin n'affichent plus les colis déjà payés
-* CORRIGÉ: Onglet Tarifs maintenant visible pour les agents
+* CORRIGÉ: Onglet Tarifs maintenant visible pour les agents (mise à jour rôle forcée)
 * AMÉLIORATION: Meilleure gestion erreurs AJAX avec messages spécifiques
 * AMÉLIORATION: Vérification existence table avant insertion
 * AMÉLIORATION: Permissions pages colis224-pricing et colis224-frontend-requests
+* AMÉLIORATION: Système de versioning des rôles pour mise à jour automatique
 * AJOUT: Élément #address-image pour image d'adresse par mode
 
 = 2.20.11 =
