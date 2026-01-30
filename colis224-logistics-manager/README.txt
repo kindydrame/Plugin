@@ -4,8 +4,8 @@ Tags: logistics, shipping, delivery, colis, international
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.18.24
-Version: 2.18.24
+Stable tag: 2.20.11
+Version: 2.20.11
 License: GPL-2.0+
 License URI: http://www.gnu.org/licenses/gpl-2.0.txt
 
@@ -25,6 +25,18 @@ Système complet de gestion logistique pour entreprise de livraison internationa
 6. Activez le plugin
 
 == Changelog ==
+
+= 2.20.11 =
+* 🐛 BUGFIX: Correction affichage images sur page de calcul
+* CORRIGÉ: QR Code WeChat, adresses Chine, instructions shipping mark
+* AJOUT: Système de gestion images avec fallback à 3 niveaux
+* AJOUT: Support images locales dans assets/images/
+* AJOUT: Configuration via options WordPress
+* AJOUT: Fonctions get_image_url() et get_calculator_images()
+
+= 2.20.10 =
+* Version de référence stable
+* Calculateur frontend complet
 
 = 2.18.24 =
 * 🚀 ULTRA-RAPIDE: Recherche 90-97% plus rapide - OBJECTIF ATTEINT !

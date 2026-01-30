@@ -21,6 +21,18 @@ class Colis224_Frontend_Calculator {
     private static $table_name = 'colis224_frontend_requests';
 
     /**
+     * Noms des fichiers images attendus
+     */
+    private static $image_files = array(
+        'wechat_qr' => 'wechat-qr',
+        'orange_money_qr' => 'orange-money-qr',
+        'sea_cargo' => 'sea-cargo-address',
+        'air_plane' => 'air-plane-address',
+        'air_cargo_mark' => 'air-cargo-mark',
+        'sea_cargo_mark' => 'sea-cargo-mark',
+    );
+
+    /**
      * Initialize the class
      */
     public static function init() {
@@ -33,6 +45,69 @@ class Colis224_Frontend_Calculator {
 
         // Enqueue scripts
         add_action('wp_enqueue_scripts', array(__CLASS__, 'enqueue_scripts'));
+    }
+
+    /**
+     * Obtenir l'URL d'une image avec fallback
+     *
+     * Ordre de priorité:
+     * 1. Image locale dans assets/images/ (jpg ou png)
+     * 2. Option WordPress si configurée
+     * 3. URL par défaut (externe)
+     *
+     * @param string $image_key Clé de l'image (ex: 'wechat_qr', 'sea_cargo')
+     * @return string URL de l'image ou chaîne vide si non trouvée
+     */
+    public static function get_image_url($image_key) {
+        $image_name = isset(self::$image_files[$image_key]) ? self::$image_files[$image_key] : $image_key;
+        $images_dir = COLIS224_PLUGIN_DIR . 'assets/images/';
+        $images_url = COLIS224_PLUGIN_URL . 'assets/images/';
+
+        // 1. Vérifier si l'image existe localement (jpg ou png)
+        $extensions = array('jpg', 'jpeg', 'png', 'webp');
+        foreach ($extensions as $ext) {
+            $local_path = $images_dir . $image_name . '.' . $ext;
+            if (file_exists($local_path)) {
+                return $images_url . $image_name . '.' . $ext;
+            }
+        }
+
+        // 2. Vérifier les options WordPress
+        $option_key = 'colis224_image_' . $image_key;
+        $option_url = get_option($option_key, '');
+        if (!empty($option_url)) {
+            return esc_url($option_url);
+        }
+
+        // 3. URLs par défaut (fallback externe)
+        $default_urls = array(
+            'wechat_qr' => 'https://colis224.com/wp-content/uploads/2026/01/Compte-Wechat.jpg',
+            'orange_money_qr' => 'https://colis224.com/wp-content/uploads/2026/01/compte-marchand-orange-money-colis224.jpg',
+            'sea_cargo' => 'https://colis224.com/wp-content/uploads/2026/01/adresse-bateau.jpeg',
+            'air_plane' => 'https://colis224.com/wp-content/uploads/2026/01/adrsse-avion.jpeg',
+            'air_cargo_mark' => 'https://colis224.com/wp-content/uploads/2026/01/Process-avion.jpg',
+            'sea_cargo_mark' => 'https://colis224.com/wp-content/uploads/2026/01/process-bateau.jpg',
+        );
+
+        return isset($default_urls[$image_key]) ? $default_urls[$image_key] : '';
+    }
+
+    /**
+     * Obtenir toutes les URLs des images pour le calculateur
+     *
+     * @return array Tableau associatif des URLs d'images
+     */
+    public static function get_calculator_images() {
+        return array(
+            'wechat_qr' => self::get_image_url('wechat_qr'),
+            'orange_money_qr' => self::get_image_url('orange_money_qr'),
+            'images' => array(
+                'sea_cargo' => self::get_image_url('sea_cargo'),
+                'air_plane' => self::get_image_url('air_plane'),
+                'air_cargo_mark' => self::get_image_url('air_cargo_mark'),
+                'sea_cargo_mark' => self::get_image_url('sea_cargo_mark'),
+            ),
+        );
     }
 
     /**
@@ -102,6 +177,9 @@ class Colis224_Frontend_Calculator {
                 true
             );
 
+            // Obtenir les URLs des images avec le système de fallback
+            $calculator_images = self::get_calculator_images();
+
             // Localize script
             wp_localize_script('colis224-frontend-calculator', 'colis224Frontend', array(
                 'ajax_url' => admin_url('admin-ajax.php'),
@@ -117,14 +195,10 @@ class Colis224_Frontend_Calculator {
                 ),
                 'orange_money_code' => '#144*6*649048*100000*code secret#OK',
                 'orange_money_merchant' => 'COLIS224',
-                'orange_money_qr' => 'https://colis224.com/wp-content/uploads/2026/01/compte-marchand-orange-money-colis224.jpg',
-                'wechat_qr' => 'https://colis224.com/wp-content/uploads/2026/01/Compte-Wechat.jpg',
-                'images' => array(
-                    'sea_cargo' => 'https://colis224.com/wp-content/uploads/2026/01/adresse-bateau.jpeg',
-                    'air_plane' => 'https://colis224.com/wp-content/uploads/2026/01/adrsse-avion.jpeg',
-                    'air_cargo_mark' => 'https://colis224.com/wp-content/uploads/2026/01/Process-avion.jpg',
-                    'sea_cargo_mark' => 'https://colis224.com/wp-content/uploads/2026/01/process-bateau.jpg',
-                )
+                'orange_money_qr' => $calculator_images['orange_money_qr'],
+                'wechat_qr' => $calculator_images['wechat_qr'],
+                'images' => $calculator_images['images'],
+                'plugin_images_url' => COLIS224_PLUGIN_URL . 'assets/images/',
             ));
         }
     }

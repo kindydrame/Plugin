@@ -4,6 +4,60 @@ Toutes les modifications importantes de ce projet seront documentées dans ce fi
 
 ---
 
+## [2.20.11] - 2026-01-30
+
+### 🐛 BUGFIX: Correction de l'affichage des images sur la page de calcul
+
+#### **Problème résolu**
+Les images suivantes ne s'affichaient pas sur la page du calculateur frontend :
+- QR Code WeChat
+- Images d'adresses de livraison Chine (Avion/Bateau)
+- Images d'instructions Shipping Mark
+
+#### **Cause racine**
+Les URLs des images étaient hardcodées vers des chemins externes (`wp-content/uploads/2026/01/`) qui n'existaient pas sur le serveur.
+
+#### **Solution implémentée**
+Nouveau système de gestion des images avec fallback à 3 niveaux :
+
+1. **Images locales** : Vérifie d'abord `assets/images/` du plugin
+2. **Options WordPress** : Vérifie les options configurées dans l'admin
+3. **URLs externes** : Utilise les URLs par défaut en dernier recours
+
+#### **Fichiers modifiés**
+
+| Fichier | Modification |
+|---------|--------------|
+| `includes/class-colis224-frontend-calculator.php` | Ajout des fonctions `get_image_url()` et `get_calculator_images()` |
+| `assets/images/README.md` | Documentation des images requises |
+| `colis224-logistics-manager.php` | Version mise à jour vers 2.20.11 |
+
+#### **Nouvelles fonctions ajoutées**
+
+```php
+// Obtenir l'URL d'une image avec fallback
+Colis224_Frontend_Calculator::get_image_url($image_key)
+
+// Obtenir toutes les URLs des images
+Colis224_Frontend_Calculator::get_calculator_images()
+```
+
+#### **Images requises (à placer dans assets/images/)**
+
+- `wechat-qr.jpg` - QR Code WeChat
+- `orange-money-qr.jpg` - QR Code Orange Money
+- `air-plane-address.jpg` - Adresse Avion Chine (Guangzhou)
+- `sea-cargo-address.jpg` - Adresse Bateau Chine (Foshan)
+- `air-cargo-mark.jpg` - Instructions Shipping Mark Avion
+- `sea-cargo-mark.jpg` - Instructions Shipping Mark Bateau
+
+#### **Migration depuis 2.20.10**
+1. Mettre à jour le plugin
+2. Placer les images dans `assets/images/` avec les noms corrects
+3. Les images seront automatiquement utilisées
+
+---
+
 ## [2.20.0] - 2026-01-25
 
 ### 🚀 NOUVELLE FONCTIONNALITÉ MAJEURE: Calculateur Frontend pour Clients
