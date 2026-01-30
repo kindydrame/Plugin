@@ -4,8 +4,8 @@ Tags: logistics, shipping, delivery, colis, international
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.20.12
-Version: 2.20.12
+Stable tag: 2.20.13
+Version: 2.20.13
 License: GPL-2.0+
 License URI: http://www.gnu.org/licenses/gpl-2.0.txt
 
@@ -25,6 +25,13 @@ Système complet de gestion logistique pour entreprise de livraison internationa
 6. Activez le plugin
 
 == Changelog ==
+
+= 2.20.13 =
+* 🐛 BUGFIX CRITIQUE: Injection directe des données images via script inline
+* CORRIGÉ: colis224Frontend.images maintenant toujours disponible
+* CORRIGÉ: Images WeChat QR, Orange Money, adresses et shipping marks
+* AMÉLIORATION: Fallback garanti même si wp_localize_script échoue
+* AJOUT: Console.log pour debug des données frontend
 
 = 2.20.12 =
 * 🐛 BUGFIX: Correction erreur "Une erreur est survenue" à la confirmation

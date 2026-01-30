@@ -944,6 +944,48 @@ class Colis224_Frontend_Calculator {
 
             </div>
         </div>
+
+        <?php
+        // v2.20.13: Injection directe des données JavaScript pour garantir leur disponibilité
+        $calculator_images = self::get_calculator_images();
+        $frontend_data = array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('colis224_frontend_nonce'),
+            'warehouse_phone_china' => '+8618719472926',
+            'warehouse_phone_guinea' => '+224620178930',
+            'agencies' => array(
+                array('name' => 'Agence 1', 'phone' => '+224620178930'),
+                array('name' => 'Agence 2 Lambanyi', 'phone' => '+224626526737'),
+                array('name' => 'Agence 3', 'phone' => '+224626526735'),
+                array('name' => 'Bureau France', 'phone' => '+33698485752'),
+                array('name' => 'Agence USA', 'phone' => '+17185822079'),
+            ),
+            'orange_money_code' => '#144*6*649048*100000*code secret#OK',
+            'orange_money_merchant' => 'COLIS224',
+            'orange_money_qr' => $calculator_images['orange_money_qr'],
+            'wechat_qr' => $calculator_images['wechat_qr'],
+            'images' => $calculator_images['images'],
+            'plugin_images_url' => COLIS224_PLUGIN_URL . 'assets/images/',
+        );
+        ?>
+        <script type="text/javascript">
+        // v2.20.13: Initialisation garantie de colis224Frontend
+        if (typeof colis224Frontend === 'undefined') {
+            var colis224Frontend = <?php echo json_encode($frontend_data); ?>;
+        } else {
+            // Merge avec les données existantes si wp_localize_script a fonctionné
+            if (!colis224Frontend.images || Object.keys(colis224Frontend.images).length === 0) {
+                colis224Frontend.images = <?php echo json_encode($calculator_images['images']); ?>;
+            }
+            if (!colis224Frontend.wechat_qr) {
+                colis224Frontend.wechat_qr = <?php echo json_encode($calculator_images['wechat_qr']); ?>;
+            }
+            if (!colis224Frontend.orange_money_qr) {
+                colis224Frontend.orange_money_qr = <?php echo json_encode($calculator_images['orange_money_qr']); ?>;
+            }
+        }
+        console.log('colis224Frontend initialisé:', colis224Frontend);
+        </script>
         <?php
         return ob_get_clean();
     }
