@@ -41,12 +41,23 @@ class Colis224_Database {
             address text DEFAULT NULL,
             balance decimal(15,2) DEFAULT 0.00,
             discount_rate decimal(5,2) DEFAULT 0.00,
+            code varchar(50) DEFAULT NULL COMMENT 'Code client pour connexion',
+            wp_user_id bigint(20) UNSIGNED DEFAULT NULL COMMENT 'ID utilisateur WordPress associé',
             notes text DEFAULT NULL,
+            validation_status enum('draft','pending','validated','rejected') DEFAULT 'pending',
+            created_by bigint(20) UNSIGNED DEFAULT NULL,
+            validated_by bigint(20) UNSIGNED DEFAULT NULL,
+            validated_at datetime DEFAULT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
+            UNIQUE KEY wp_user_id (wp_user_id),
+            KEY name (name),
             KEY phone (phone),
-            KEY email (email)
+            KEY email (email),
+            KEY company_name (company_name),
+            KEY validation_status (validation_status),
+            KEY created_by (created_by)
         ) $charset_collate;";
         dbDelta($sql_clients);
 
@@ -92,7 +103,10 @@ class Colis224_Database {
             id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             tracking_number varchar(50) NOT NULL,
             client_id bigint(20) UNSIGNED DEFAULT NULL,
+            client_email varchar(100) DEFAULT NULL,
             sender_name varchar(255) DEFAULT NULL,
+            sender_phone varchar(50) DEFAULT NULL,
+            sender_id_card varchar(100) DEFAULT NULL,
             recipient_name varchar(255) NOT NULL,
             recipient_phone varchar(50) NOT NULL,
             recipient_address text NOT NULL,
@@ -116,15 +130,24 @@ class Colis224_Database {
             paid_amount decimal(15,2) DEFAULT 0.00,
             remaining_amount decimal(15,2) DEFAULT 0.00,
             driver_id bigint(20) UNSIGNED DEFAULT NULL,
+            recorded_by_agent_id bigint(20) UNSIGNED DEFAULT NULL,
             photos text DEFAULT NULL,
+            receipt_photo varchar(255) DEFAULT NULL,
             notes text DEFAULT NULL,
+            validation_status enum('draft','pending','validated','rejected') DEFAULT 'pending',
+            created_by bigint(20) UNSIGNED DEFAULT NULL,
+            validated_by bigint(20) UNSIGNED DEFAULT NULL,
+            validated_at datetime DEFAULT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
             UNIQUE KEY tracking_number (tracking_number),
             KEY client_id (client_id),
             KEY status (status),
-            KEY payment_status (payment_status)
+            KEY payment_status (payment_status),
+            KEY validation_status (validation_status),
+            KEY created_by (created_by),
+            KEY recorded_by_agent_id (recorded_by_agent_id)
         ) $charset_collate;";
         dbDelta($sql_parcels);
 
@@ -908,7 +931,76 @@ class Colis224_Database {
                 $wpdb->query("ALTER TABLE $table_parcels ADD INDEX idx_batch_id (batch_id)");
             }
         }
-        
+
+        // ===== MIGRATION v2.18.3: Ajouter les colonnes de validation =====
+
+        // Migration pour la table colis224_parcels
+        if ($table_exists) {
+            // Vérifier et ajouter validation_status
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_parcels LIKE 'validation_status'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_parcels ADD COLUMN validation_status enum('draft','pending','validated','rejected') DEFAULT 'pending' AFTER notes");
+                $wpdb->query("ALTER TABLE $table_parcels ADD INDEX idx_validation_status (validation_status)");
+            }
+
+            // Vérifier et ajouter created_by
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_parcels LIKE 'created_by'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_parcels ADD COLUMN created_by bigint(20) UNSIGNED DEFAULT NULL AFTER validation_status");
+                $wpdb->query("ALTER TABLE $table_parcels ADD INDEX idx_created_by (created_by)");
+            }
+
+            // Vérifier et ajouter validated_by
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_parcels LIKE 'validated_by'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_parcels ADD COLUMN validated_by bigint(20) UNSIGNED DEFAULT NULL AFTER created_by");
+            }
+
+            // Vérifier et ajouter validated_at
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_parcels LIKE 'validated_at'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_parcels ADD COLUMN validated_at datetime DEFAULT NULL AFTER validated_by");
+            }
+        }
+
+        // Migration pour la table colis224_clients
+        $table_clients = $wpdb->prefix . 'colis224_clients';
+        $table_exists_clients = $wpdb->get_var("SHOW TABLES LIKE '$table_clients'") === $table_clients;
+        if ($table_exists_clients) {
+            // Vérifier et ajouter validation_status
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_clients LIKE 'validation_status'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_clients ADD COLUMN validation_status enum('draft','pending','validated','rejected') DEFAULT 'pending' AFTER notes");
+                $wpdb->query("ALTER TABLE $table_clients ADD INDEX idx_validation_status (validation_status)");
+            }
+
+            // Vérifier et ajouter created_by
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_clients LIKE 'created_by'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_clients ADD COLUMN created_by bigint(20) UNSIGNED DEFAULT NULL AFTER validation_status");
+                $wpdb->query("ALTER TABLE $table_clients ADD INDEX idx_created_by (created_by)");
+            }
+
+            // Vérifier et ajouter validated_by
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_clients LIKE 'validated_by'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_clients ADD COLUMN validated_by bigint(20) UNSIGNED DEFAULT NULL AFTER created_by");
+            }
+
+            // Vérifier et ajouter validated_at
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_clients LIKE 'validated_at'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_clients ADD COLUMN validated_at datetime DEFAULT NULL AFTER validated_by");
+            }
+
+            // v2.18.25: Vérifier et ajouter country
+            $columns = $wpdb->get_results("SHOW COLUMNS FROM $table_clients LIKE 'country'");
+            if (empty($columns)) {
+                $wpdb->query("ALTER TABLE $table_clients ADD COLUMN country varchar(100) DEFAULT NULL AFTER company_name");
+                $wpdb->query("ALTER TABLE $table_clients ADD INDEX idx_country (country)");
+            }
+        }
+
         // Créer les données par défaut (catégories, pays, modes de transport)
         self::insert_default_data();
         
@@ -993,7 +1085,133 @@ class Colis224_Database {
                 $wpdb->insert($transport_table, $transport);
             }
         }
-        
+
+        // ===== SYSTÈME DE MESSAGES PRÉENREGISTRÉS V2.18.4 =====
+
+        // Table des catégories de messages
+        $table_message_categories = $wpdb->prefix . 'colis224_message_categories';
+        $sql_message_categories = "CREATE TABLE $table_message_categories (
+            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            name varchar(255) NOT NULL,
+            description text DEFAULT NULL,
+            color varchar(7) DEFAULT '#0073aa',
+            icon varchar(50) DEFAULT 'email',
+            display_order int(11) DEFAULT 0,
+            is_active tinyint(1) DEFAULT 1,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP,
+            updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            KEY is_active (is_active),
+            KEY display_order (display_order)
+        ) $charset_collate;";
+        dbDelta($sql_message_categories);
+
+        // Table des messages préenregistrés
+        $table_message_templates = $wpdb->prefix . 'colis224_message_templates';
+        $sql_message_templates = "CREATE TABLE $table_message_templates (
+            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            category_id bigint(20) UNSIGNED NOT NULL,
+            title varchar(255) NOT NULL,
+            subject varchar(255) DEFAULT NULL,
+            message_body text NOT NULL,
+            message_type enum('email','sms','whatsapp','all') DEFAULT 'all',
+            variables text DEFAULT NULL COMMENT 'JSON des variables disponibles',
+            usage_count int(11) DEFAULT 0,
+            is_active tinyint(1) DEFAULT 1,
+            created_by bigint(20) UNSIGNED DEFAULT NULL,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP,
+            updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            KEY category_id (category_id),
+            KEY is_active (is_active),
+            KEY created_by (created_by)
+        ) $charset_collate;";
+        dbDelta($sql_message_templates);
+
+        // Insérer des catégories par défaut
+        $categories_exist = $wpdb->get_var("SELECT COUNT(*) FROM $table_message_categories");
+        if ($categories_exist == 0) {
+            $default_categories = array(
+                array(
+                    'name' => 'Relance',
+                    'description' => 'Messages de relance pour les clients',
+                    'color' => '#f0ad4e',
+                    'icon' => 'megaphone',
+                    'display_order' => 1
+                ),
+                array(
+                    'name' => 'Gestion client difficile',
+                    'description' => 'Messages pour gérer les situations délicates',
+                    'color' => '#dc3232',
+                    'icon' => 'warning',
+                    'display_order' => 2
+                ),
+                array(
+                    'name' => 'Bienvenue & Remerciements',
+                    'description' => 'Messages de bienvenue et remerciements',
+                    'color' => '#46b450',
+                    'icon' => 'heart',
+                    'display_order' => 3
+                ),
+                array(
+                    'name' => 'Informations Générales',
+                    'description' => 'Messages d\'information sur les services',
+                    'color' => '#0073aa',
+                    'icon' => 'info',
+                    'display_order' => 4
+                ),
+                array(
+                    'name' => 'Urgences & Retards',
+                    'description' => 'Messages pour gérer les urgences et retards',
+                    'color' => '#d63638',
+                    'icon' => 'clock',
+                    'display_order' => 5
+                )
+            );
+
+            foreach ($default_categories as $category) {
+                $wpdb->insert($table_message_categories, $category);
+            }
+        }
+
+        // Insérer quelques messages par défaut
+        $messages_exist = $wpdb->get_var("SELECT COUNT(*) FROM $table_message_templates");
+        if ($messages_exist == 0) {
+            $relance_cat_id = $wpdb->get_var("SELECT id FROM $table_message_categories WHERE name = 'Relance' LIMIT 1");
+            $bienvenue_cat_id = $wpdb->get_var("SELECT id FROM $table_message_categories WHERE name = 'Bienvenue & Remerciements' LIMIT 1");
+
+            $default_messages = array(
+                array(
+                    'category_id' => $relance_cat_id,
+                    'title' => 'Relance colis disponible',
+                    'subject' => 'Votre colis est disponible - {tracking_number}',
+                    'message_body' => "Bonjour {client_name},\n\nVotre colis {tracking_number} est arrivé à notre bureau de Conakry et est disponible pour retrait.\n\nMerci de venir le récupérer dès que possible.\n\nCordialement,\nL'équipe Colis224",
+                    'message_type' => 'all',
+                    'variables' => '["client_name","tracking_number"]'
+                ),
+                array(
+                    'category_id' => $relance_cat_id,
+                    'title' => 'Relance paiement',
+                    'subject' => 'Rappel de paiement - {tracking_number}',
+                    'message_body' => "Bonjour {client_name},\n\nNous vous rappelons que le paiement pour votre colis {tracking_number} est en attente.\n\nMontant dû : {amount} GNF\n\nMerci de régulariser votre situation.\n\nCordialement,\nL'équipe Colis224",
+                    'message_type' => 'all',
+                    'variables' => '["client_name","tracking_number","amount"]'
+                ),
+                array(
+                    'category_id' => $bienvenue_cat_id,
+                    'title' => 'Merci pour votre confiance',
+                    'subject' => 'Merci d\'avoir choisi Colis224',
+                    'message_body' => "Bonjour {client_name},\n\nMerci d'avoir confié votre colis à Colis224 !\n\nNous mettons tout en œuvre pour assurer sa livraison dans les meilleurs délais.\n\nVous pouvez suivre votre colis avec le numéro : {tracking_number}\n\nÀ bientôt,\nL'équipe Colis224",
+                    'message_type' => 'all',
+                    'variables' => '["client_name","tracking_number"]'
+                )
+            );
+
+            foreach ($default_messages as $message) {
+                $wpdb->insert($table_message_templates, $message);
+            }
+        }
+
     }
 
     /**

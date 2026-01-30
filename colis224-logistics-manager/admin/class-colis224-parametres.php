@@ -184,23 +184,7 @@ class Colis224_Settings {
                             <input type="checkbox" id="sms_notifications" name="sms_notifications" value="1"
                                    <?php checked(get_option('colis224_sms_notifications', '0'), '1'); ?>>
                             <label for="sms_notifications">Activer les notifications par SMS</label>
-                            <p class="description">Nécessite configuration d'une API SMS</p>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th><label for="sms_api_url">URL API SMS</label></th>
-                        <td>
-                            <input type="url" id="sms_api_url" name="sms_api_url" class="large-text"
-                                   value="<?php echo esc_attr(get_option('colis224_sms_api_url', '')); ?>">
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th><label for="sms_api_key">Clé API SMS</label></th>
-                        <td>
-                            <input type="text" id="sms_api_key" name="sms_api_key" class="regular-text"
-                                   value="<?php echo esc_attr(get_option('colis224_sms_api_key', '')); ?>">
+                            <p class="description">📱 Configurez votre fournisseur SMS dans l'onglet <a href="?page=colis224-settings&tab=sms" style="font-weight: bold; color: #2271b1;">Configuration SMS</a></p>
                         </td>
                     </tr>
                 </table>
@@ -343,12 +327,13 @@ class Colis224_Settings {
                         <td>
                             <select id="sms_provider" name="sms_provider" class="regular-text">
                                 <option value="none" <?php selected(get_option('colis224_sms_provider', 'none'), 'none'); ?>>Aucun (Désactivé)</option>
+                                <option value="nimbasms" <?php selected(get_option('colis224_sms_provider'), 'nimbasms'); ?>>NimbaSMS (Recommandé pour Guinée)</option>
                                 <option value="orange" <?php selected(get_option('colis224_sms_provider'), 'orange'); ?>>Orange SMS API (Guinée)</option>
                                 <option value="africas_talking" <?php selected(get_option('colis224_sms_provider'), 'africas_talking'); ?>>Africa's Talking</option>
                                 <option value="twilio" <?php selected(get_option('colis224_sms_provider'), 'twilio'); ?>>Twilio</option>
                                 <option value="custom" <?php selected(get_option('colis224_sms_provider'), 'custom'); ?>>API Personnalisée</option>
                             </select>
-                            <p class="description">Choisissez votre fournisseur de SMS</p>
+                            <p class="description">Configurez votre fournisseur SMS pour envoyer des notifications automatiques aux clients.</p>
                         </td>
                     </tr>
                 </table>
@@ -376,6 +361,35 @@ class Colis224_Settings {
                         <td>
                             <input type="text" id="orange_sms_sender" name="orange_sms_sender" class="regular-text"
                                    value="<?php echo esc_attr(get_option('colis224_orange_sms_sender', 'Colis224')); ?>">
+                            <p class="description">Nom qui apparaîtra comme expéditeur (max 11 caractères)</p>
+                        </td>
+                    </tr>
+                </table>
+
+                <h4 style="margin-top: 30px;">📱 NimbaSMS (Guinée)</h4>
+                <table class="form-table">
+                    <tr>
+                        <th><label for="nimbasms_sid">Service ID (SID)</label></th>
+                        <td>
+                            <input type="text" id="nimbasms_sid" name="nimbasms_sid" class="regular-text"
+                                   value="<?php echo esc_attr(get_option('colis224_nimbasms_sid', '48782ece605fcd66fc15da242cc0142c')); ?>">
+                            <p class="description">Votre Service ID NimbaSMS</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="nimbasms_token">Authorization Token</label></th>
+                        <td>
+                            <input type="password" id="nimbasms_token" name="nimbasms_token" class="regular-text"
+                                   value="<?php echo esc_attr(get_option('colis224_nimbasms_token', 'Basic NDg3ODJlY2U2MDVmY2Q2NmZjMTVkYTI0MmNjMDE0MmM6elhMZGIySU4xVVh2eE5KZWdyakJkX0VGMlE2XzRtemFGM2FFTlE1NW94ZmYyS0lWX1lMNi1KdnE1TUNaRGV0Vm9wc1JVaXYyNkdIUkhpYWVPbmdMU2xnQnNPOS1YNXE0dWkxS1BEUFFOMjQ=')); ?>">
+                            <p class="description">Token d'autorisation (format: Basic ...)</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="nimbasms_from">Nom Expéditeur</label></th>
+                        <td>
+                            <input type="text" id="nimbasms_from" name="nimbasms_from" class="regular-text"
+                                   value="<?php echo esc_attr(get_option('colis224_nimbasms_from', 'Colis224')); ?>"
+                                   maxlength="11">
                             <p class="description">Nom qui apparaîtra comme expéditeur (max 11 caractères)</p>
                         </td>
                     </tr>
@@ -638,6 +652,7 @@ class Colis224_Settings {
 
             // Configuration SMS
             'sms_provider',
+            'nimbasms_sid', 'nimbasms_token', 'nimbasms_from',
             'orange_sms_client_id', 'orange_sms_client_secret', 'orange_sms_sender',
             'africastalking_username', 'africastalking_api_key', 'africastalking_from',
             'twilio_account_sid', 'twilio_auth_token', 'twilio_from_number',

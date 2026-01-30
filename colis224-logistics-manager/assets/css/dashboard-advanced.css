@@ -1,0 +1,560 @@
+/**
+ * Colis224 Dashboard Advanced Filters - CSS
+ *
+ * Styles pour le panneau de filtres et les statistiques avancées
+ * Version: 2.18.22
+ */
+
+/* ===== PANNEAU DE FILTRES ===== */
+
+.dashboard-filters-panel {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: linear-gradient(to right, #0073aa, #005a87);
+    color: #fff;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+}
+
+.filters-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.toggle-filters-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 5px;
+    transition: transform 0.3s ease;
+}
+
+.toggle-filters-btn:hover {
+    transform: scale(1.1);
+}
+
+.toggle-filters-btn .dashicons {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+}
+
+.filters-content {
+    padding: 20px;
+    background: #f9f9f9;
+}
+
+#dashboard-filters-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.filter-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-section label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #23282d;
+    font-size: 14px;
+}
+
+.filter-section select,
+.filter-section input[type="date"] {
+    padding: 8px 12px;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    font-size: 14px;
+    background: #fff;
+    transition: border-color 0.2s ease;
+}
+
+.filter-section select:focus,
+.filter-section input[type="date"]:focus {
+    border-color: #0073aa;
+    outline: none;
+    box-shadow: 0 0 0 1px #0073aa;
+}
+
+/* Boutons de période */
+.time-period-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.period-btn {
+    padding: 8px 16px;
+    border: 2px solid #ccd0d4;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    color: #555;
+}
+
+.period-btn:hover {
+    border-color: #0073aa;
+    color: #0073aa;
+    background: #f0f8ff;
+}
+
+.period-btn[data-active="true"] {
+    background: #0073aa;
+    color: #fff;
+    border-color: #0073aa;
+}
+
+/* Dates personnalisées */
+.custom-dates {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+}
+
+.custom-dates span {
+    font-weight: 600;
+    color: #555;
+}
+
+/* Boutons d'action */
+.filter-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+    margin-top: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+}
+
+.filter-actions .button {
+    padding: 8px 20px;
+    font-size: 14px;
+}
+
+/* ===== CONTENEUR DES STATISTIQUES ===== */
+
+#filtered-stats-container {
+    margin-top: 20px;
+}
+
+.stats-loading {
+    text-align: center;
+    padding: 40px;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    font-size: 16px;
+    color: #555;
+}
+
+.stats-loading .dashicons {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: #0073aa;
+    display: inline-block;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+.rotating {
+    animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ===== STATISTIQUES AVANCÉES ===== */
+
+.advanced-stats-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.stats-section {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.stats-section h3 {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #23282d;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #0073aa;
+}
+
+.stats-section h4 {
+    margin: 0 0 15px 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #555;
+}
+
+/* Cartes de statistiques */
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.stat-card {
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.green {
+    background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+    color: #fff;
+}
+
+.stat-card.red {
+    background: linear-gradient(135deg, #ef5350 0%, #d32f2f 100%);
+    color: #fff;
+}
+
+.stat-card.orange {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: #fff;
+}
+
+.stat-card.blue {
+    background: linear-gradient(135deg, #42a5f5 0%, #1976d2 100%);
+    color: #fff;
+}
+
+.stat-value {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.9;
+    margin-bottom: 10px;
+}
+
+.stat-amount {
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0.95;
+    line-height: 1.4;
+}
+
+/* Tableaux de statistiques */
+.stats-table-wrapper {
+    overflow-x: auto;
+}
+
+.stats-section table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stats-section table th {
+    background: #f0f0f1;
+    font-weight: 600;
+    text-align: left;
+    padding: 12px;
+    color: #23282d;
+    border-bottom: 2px solid #ccd0d4;
+}
+
+.stats-section table td {
+    padding: 12px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.stats-section table tr:hover {
+    background: #f9f9f9;
+}
+
+.text-green {
+    color: #43a047;
+    font-weight: 600;
+}
+
+.text-red {
+    color: #d32f2f;
+    font-weight: 600;
+}
+
+.text-orange {
+    color: #f57c00;
+    font-weight: 600;
+}
+
+/* Grille géographique */
+.geo-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.geo-stats-column {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 4px;
+    border: 1px solid #e5e5e5;
+}
+
+/* Messages d'erreur */
+.error-message {
+    padding: 15px 20px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    color: #856404;
+    font-weight: 500;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media screen and (max-width: 768px) {
+    #dashboard-filters-form {
+        grid-template-columns: 1fr;
+    }
+
+    .time-period-buttons {
+        flex-direction: column;
+    }
+
+    .period-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .filter-actions {
+        flex-direction: column;
+    }
+
+    .filter-actions .button {
+        width: 100%;
+        text-align: center;
+    }
+
+    .stats-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .geo-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filters-header h3 {
+        font-size: 14px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+    }
+
+    .stats-section {
+        padding: 15px;
+    }
+
+    .stats-section table {
+        font-size: 13px;
+    }
+
+    .stats-section table th,
+    .stats-section table td {
+        padding: 8px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .filters-header {
+        padding: 12px 15px;
+    }
+
+    .filters-content {
+        padding: 15px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+    }
+
+    .stat-amount {
+        font-size: 11px;
+    }
+
+    .stats-section h3 {
+        font-size: 16px;
+    }
+
+    .stats-section h4 {
+        font-size: 14px;
+    }
+
+    /* Rendre les tableaux scrollables horizontalement sur mobile */
+    .stats-table-wrapper {
+        overflow-x: scroll;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .stats-section table {
+        min-width: 600px;
+        font-size: 12px;
+    }
+}
+
+/* ===== ANIMATIONS ===== */
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stats-section {
+    animation: slideDown 0.3s ease;
+}
+
+.stat-card {
+    animation: slideDown 0.3s ease;
+}
+
+/* Délai progressif pour les cartes */
+.stat-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.stat-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.stat-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.stat-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+/* ===== ACCESSIBILITÉ ===== */
+
+.period-btn:focus,
+.filter-section select:focus,
+.filter-section input:focus,
+.button:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+/* Mode contraste élevé */
+@media (prefers-contrast: high) {
+    .stat-card {
+        border: 2px solid #000;
+    }
+
+    .filters-header {
+        border-bottom: 3px solid #000;
+    }
+}
+
+/* Mode sombre (si WordPress active le mode sombre) */
+@media (prefers-color-scheme: dark) {
+    .dashboard-filters-panel,
+    .stats-section {
+        background: #1e1e1e;
+        border-color: #3a3a3a;
+        color: #e0e0e0;
+    }
+
+    .filters-content {
+        background: #252525;
+    }
+
+    .filter-section label {
+        color: #e0e0e0;
+    }
+
+    .filter-section select,
+    .filter-section input[type="date"] {
+        background: #2a2a2a;
+        border-color: #3a3a3a;
+        color: #e0e0e0;
+    }
+
+    .period-btn {
+        background: #2a2a2a;
+        border-color: #3a3a3a;
+        color: #e0e0e0;
+    }
+
+    .period-btn:hover {
+        background: #333;
+    }
+
+    .stats-section h3,
+    .stats-section h4 {
+        color: #e0e0e0;
+    }
+
+    .stats-section table th {
+        background: #2a2a2a;
+        color: #e0e0e0;
+    }
+
+    .stats-section table tr:hover {
+        background: #2a2a2a;
+    }
+}

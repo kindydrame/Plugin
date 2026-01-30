@@ -49,6 +49,7 @@ class Colis224_Parcels {
         $search = isset($_GET['s']) ? sanitize_text_field($_GET['s']) : '';
         $status_filter = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
         $payment_filter = isset($_GET['payment']) ? sanitize_text_field($_GET['payment']) : '';
+        $country_filter = isset($_GET['country']) ? intval($_GET['country']) : ''; // v2.18.27: Filtre pays
 
         // RESTRICTION AGENTS : Masquer les colis rejetés (v2.11.0)
         $current_user = wp_get_current_user();
@@ -64,6 +65,11 @@ class Colis224_Parcels {
         if ($user_role === 'colis224_agent') {
             $where .= " AND p.validation_status != 'rejected'";
         }
+
+        // Vérifier si l'utilisateur a un rôle non-financier (v2.18.3)
+        $hide_financial = ($user_role === 'colis224_agent') ||
+                         in_array('editor', $current_user->roles) ||
+                         in_array('author', $current_user->roles);
 
         if (!empty($search)) {
             $where .= $wpdb->prepare(
@@ -81,6 +87,14 @@ class Colis224_Parcels {
         if (!empty($payment_filter)) {
             $where .= $wpdb->prepare(" AND p.payment_status = %s", $payment_filter);
         }
+
+        // v2.18.27: Filtre par pays d'origine
+        if (!empty($country_filter)) {
+            $where .= $wpdb->prepare(" AND p.origin_country_id = %d", $country_filter);
+        }
+
+        // Récupération des pays pour le filtre (v2.18.27)
+        $countries = $wpdb->get_results("SELECT id, name FROM $table_countries ORDER BY name ASC");
 
         // Récupération des colis
         $parcels = $wpdb->get_results("
@@ -115,18 +129,28 @@ class Colis224_Parcels {
 
                     <select name="status">
                         <option value="">Tous les statuts</option>
-                        <option value="En attente" <?php selected($status_filter, 'En attente'); ?>>En attente</option>
-                        <option value="Expédié" <?php selected($status_filter, 'Expédié'); ?>>Expédié</option>
-                        <option value="En transit" <?php selected($status_filter, 'En transit'); ?>>En transit</option>
-                        <option value="Livré" <?php selected($status_filter, 'Livré'); ?>>Livré</option>
-                        <option value="Retour" <?php selected($status_filter, 'Retour'); ?>>Retour</option>
+                        <option value="En attente" <?php selected($status_filter, 'En attente'); ?>>⏳ En attente</option>
+                        <option value="Expédié" <?php selected($status_filter, 'Expédié'); ?>>📦 Expédié</option>
+                        <option value="En transit" <?php selected($status_filter, 'En transit'); ?>>🚚 En transit</option>
+                        <option value="Livré" <?php selected($status_filter, 'Livré'); ?>>✅ Livré</option>
+                        <option value="Retour" <?php selected($status_filter, 'Retour'); ?>>↩️ Retour</option>
                     </select>
 
                     <select name="payment">
                         <option value="">Tous les paiements</option>
-                        <option value="Payé" <?php selected($payment_filter, 'Payé'); ?>>Payé</option>
-                        <option value="Partiel" <?php selected($payment_filter, 'Partiel'); ?>>Partiel</option>
-                        <option value="Non payé" <?php selected($payment_filter, 'Non payé'); ?>>Non payé</option>
+                        <option value="Payé" <?php selected($payment_filter, 'Payé'); ?>>💰 Payé</option>
+                        <option value="Partiel" <?php selected($payment_filter, 'Partiel'); ?>>💵 Partiel</option>
+                        <option value="Non payé" <?php selected($payment_filter, 'Non payé'); ?>>❌ Non payé</option>
+                    </select>
+
+                    <!-- v2.18.27: Filtre par pays d'origine -->
+                    <select name="country">
+                        <option value="">Tous les pays</option>
+                        <?php foreach ($countries as $country): ?>
+                            <option value="<?php echo esc_attr($country->id); ?>" <?php selected($country_filter, $country->id); ?>>
+                                <?php echo Colis224_Emojis::get_country_flag($country->name); ?> <?php echo esc_html($country->name); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
 
                     <button type="submit" class="button">Filtrer</button>
@@ -145,8 +169,8 @@ class Colis224_Parcels {
                             <th>Origine</th>
                             <th>Transport</th>
                             <th>Statut</th>
-                            <th>Montant</th>
-                            <th>Paiement</th>
+                            <?php if (!$hide_financial): ?><th>Montant</th><?php endif; ?>
+                            <?php if (!$hide_financial): ?><th>Paiement</th><?php endif; ?>
                             <th>Date</th>
                             <th>Actions</th>
                         </tr>
@@ -154,7 +178,7 @@ class Colis224_Parcels {
                     <tbody>
                         <?php if (empty($parcels)): ?>
                         <tr>
-                            <td colspan="10" style="text-align: center;">Aucun colis trouvé.</td>
+                            <td colspan="<?php echo $hide_financial ? '8' : '10'; ?>" style="text-align: center;">Aucun colis trouvé.</td>
                         </tr>
                         <?php else: ?>
                             <?php foreach ($parcels as $parcel): ?>
@@ -165,24 +189,38 @@ class Colis224_Parcels {
                                     <?php echo esc_html($parcel->recipient_name); ?><br>
                                     <small><?php echo esc_html($parcel->recipient_phone); ?></small>
                                 </td>
-                                <td><?php echo esc_html($parcel->origin_country ?: '-'); ?></td>
-                                <td><?php echo esc_html($parcel->transport_mode ?: '-'); ?></td>
+                                <td>
+                                    <?php if ($parcel->origin_country): ?>
+                                        <?php echo Colis224_Emojis::get_country_flag($parcel->origin_country); ?> <?php echo esc_html($parcel->origin_country); ?>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if ($parcel->transport_mode): ?>
+                                        <?php echo Colis224_Emojis::get_transport_emoji($parcel->transport_mode); ?> <?php echo esc_html($parcel->transport_mode); ?>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <span class="colis224-badge colis224-badge-<?php echo sanitize_title($parcel->status); ?>">
-                                        <?php echo esc_html($parcel->status); ?>
+                                        <?php echo Colis224_Emojis::get_parcel_status_emoji($parcel->status); ?> <?php echo esc_html($parcel->status); ?>
                                     </span>
                                 </td>
+                                <?php if (!$hide_financial): ?>
                                 <td>
                                     <?php echo number_format($parcel->total_amount, 0, ',', ' '); ?> <?php echo $parcel->currency; ?>
                                 </td>
                                 <td>
                                     <span class="colis224-badge colis224-badge-payment-<?php echo sanitize_title($parcel->payment_status); ?>">
-                                        <?php echo esc_html($parcel->payment_status); ?>
+                                        <?php echo Colis224_Emojis::get_payment_status_emoji($parcel->payment_status); ?> <?php echo esc_html($parcel->payment_status); ?>
                                     </span>
                                     <?php if ($parcel->payment_status === 'Partiel'): ?>
                                     <br><small>Payé: <?php echo number_format($parcel->paid_amount, 0, ',', ' '); ?></small>
                                     <?php endif; ?>
                                 </td>
+                                <?php endif; ?>
                                 <td><?php echo date('d/m/Y', strtotime($parcel->created_at)); ?></td>
                                 <td class="colis224-actions">
                                     <a href="?page=colis224-parcels&action=view&id=<?php echo $parcel->id; ?>"
@@ -190,6 +228,7 @@ class Colis224_Parcels {
                                         <span class="dashicons dashicons-visibility"></span>
                                         Voir
                                     </a>
+                                    <?php if (!$hide_financial): // Seuls les admins peuvent modifier/supprimer ?>
                                     <a href="?page=colis224-parcels&action=edit&id=<?php echo $parcel->id; ?>"
                                        class="button button-small" title="Modifier ce colis">
                                         <span class="dashicons dashicons-edit"></span>
@@ -202,6 +241,7 @@ class Colis224_Parcels {
                                         <span class="dashicons dashicons-trash"></span>
                                         Supprimer
                                     </a>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -226,11 +266,12 @@ class Colis224_Parcels {
         }
 
         // Récupération des données pour les listes déroulantes
-        $clients = $wpdb->get_results("SELECT id, name, phone FROM {$wpdb->prefix}colis224_clients ORDER BY name");
+        $clients = $wpdb->get_results("SELECT id, name, phone, email FROM {$wpdb->prefix}colis224_clients ORDER BY name");
         $countries = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}colis224_countries ORDER BY name");
         $transport_modes = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}colis224_transport_modes ORDER BY name");
         $categories = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}colis224_parcel_categories ORDER BY name");
         $drivers = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}colis224_drivers WHERE is_active = 1 ORDER BY name");
+        $agents = $wpdb->get_results("SELECT id, name, role FROM {$wpdb->prefix}colis224_team_members WHERE is_active = 1 ORDER BY name");
 
         $is_edit = ($parcel !== null);
         $title = $is_edit ? 'Modifier le Colis' : 'Nouveau Colis';
@@ -255,32 +296,57 @@ class Colis224_Parcels {
                     <?php endif; ?>
                     <?php wp_nonce_field('colis224_parcel_action', 'colis224_parcel_nonce'); ?>
 
-                    <div class="colis224-form-grid">
-                        <!-- Numéro de suivi -->
-                        <div class="colis224-form-group">
-                            <label for="tracking_number">Numéro de Suivi *</label>
-                            <input type="text" name="tracking_number" id="tracking_number"
-                                   value="<?php echo $is_edit ? esc_attr($parcel->tracking_number) : ''; ?>"
-                                   placeholder="PA + 4 derniers chiffres téléphone"
-                                   <?php echo !$is_edit ? '' : 'readonly'; ?> required>
-                            <?php if (!$is_edit): ?>
-                            <small>Laissez vide pour génération automatique ou saisissez manuellement</small>
-                            <?php endif; ?>
-                        </div>
+                    <!-- Section Identification -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                        <h2 style="color: white; margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px;">
+                            <span class="dashicons dashicons-id-alt" style="font-size: 28px;"></span>
+                            🆔 Identification du Colis
+                        </h2>
+                        <div class="colis224-form-grid" style="gap: 15px;">
+                            <!-- Numéro de suivi -->
+                            <div class="colis224-form-group">
+                                <label for="tracking_number" style="color: white; font-weight: 600;">
+                                    🔖 Numéro de Suivi *
+                                </label>
+                                <input type="text" name="tracking_number" id="tracking_number"
+                                       value="<?php echo $is_edit ? esc_attr($parcel->tracking_number) : ''; ?>"
+                                       placeholder="PA + 4 derniers chiffres téléphone"
+                                       style="background: rgba(255,255,255,0.95);"
+                                       <?php echo !$is_edit ? '' : 'readonly'; ?> required>
+                                <?php if (!$is_edit): ?>
+                                <small style="color: rgba(255,255,255,0.9);">⚡ Génération automatique si vide</small>
+                                <?php endif; ?>
+                            </div>
 
-                        <!-- Client avec autocomplete -->
-                        <div class="colis224-form-group">
-                            <label for="client_search">Client (recherche par nom ou téléphone)</label>
-                            <input type="text" id="client_search" class="colis224-autocomplete-input"
-                                   placeholder="Tapez un nom ou numéro de téléphone..."
-                                   value="<?php
-                                   if ($is_edit && $parcel->client_id) {
-                                       $client = $wpdb->get_row($wpdb->prepare("SELECT name, phone FROM {$wpdb->prefix}colis224_clients WHERE id = %d", $parcel->client_id));
-                                       if ($client) echo esc_attr($client->name . ' - ' . $client->phone);
-                                   }
-                                   ?>">
-                            <input type="hidden" name="client_id" id="client_id" value="<?php echo $is_edit ? esc_attr($parcel->client_id) : ''; ?>">
-                            <small>Commencez à taper pour rechercher un client existant</small>
+                            <!-- Client avec autocomplete -->
+                            <div class="colis224-form-group">
+                                <label for="client_search" style="color: white; font-weight: 600;">
+                                    👤 Client (recherche intelligente)
+                                </label>
+                                <input type="text" id="client_search" class="colis224-autocomplete-client"
+                                       placeholder="🔍 Tapez un nom, téléphone ou email..."
+                                       style="background: rgba(255,255,255,0.95);"
+                                       value="<?php
+                                       if ($is_edit && $parcel->client_id) {
+                                           $client = $wpdb->get_row($wpdb->prepare("SELECT name, phone, email FROM {$wpdb->prefix}colis224_clients WHERE id = %d", $parcel->client_id));
+                                           if ($client) echo esc_attr($client->name . ' - ' . $client->phone);
+                                       }
+                                       ?>">
+                                <input type="hidden" name="client_id" id="client_id" value="<?php echo $is_edit ? esc_attr($parcel->client_id) : ''; ?>">
+                                <small style="color: rgba(255,255,255,0.9);">💡 Auto-remplissage des informations</small>
+                            </div>
+
+                            <!-- Email du client -->
+                            <div class="colis224-form-group">
+                                <label for="client_email" style="color: white; font-weight: 600;">
+                                    📧 Email du Client
+                                </label>
+                                <input type="email" name="client_email" id="client_email"
+                                       placeholder="exemple@email.com"
+                                       style="background: rgba(255,255,255,0.95);"
+                                       value="<?php echo $is_edit ? esc_attr($parcel->client_email) : ''; ?>">
+                                <small style="color: rgba(255,255,255,0.9);">✉️ Pour notifications automatiques</small>
+                            </div>
                         </div>
                     </div>
 
@@ -318,11 +384,29 @@ class Colis224_Parcels {
 
                         <!-- Nom expéditeur avec autocomplete -->
                         <div class="colis224-form-group">
-                            <label for="sender_name">Nom Expéditeur</label>
+                            <label for="sender_name">📤 Nom Expéditeur</label>
                             <input type="text" name="sender_name" id="sender_name" class="colis224-autocomplete-sender"
                                    placeholder="Tapez pour rechercher dans l'historique..."
                                    value="<?php echo $is_edit ? esc_attr($parcel->sender_name) : ''; ?>">
                             <small>Suggestions basées sur l'historique des expéditions</small>
+                        </div>
+
+                        <!-- Téléphone expéditeur -->
+                        <div class="colis224-form-group">
+                            <label for="sender_phone">📞 Téléphone Expéditeur</label>
+                            <input type="tel" name="sender_phone" id="sender_phone"
+                                   placeholder="+224 XXX XXX XXX"
+                                   value="<?php echo $is_edit ? esc_attr($parcel->sender_phone) : ''; ?>">
+                            <small>Numéro de contact de l'expéditeur</small>
+                        </div>
+
+                        <!-- Numéro de pièce d'identité -->
+                        <div class="colis224-form-group">
+                            <label for="sender_id_card">🪪 N° Pièce d'Identité</label>
+                            <input type="text" name="sender_id_card" id="sender_id_card"
+                                   placeholder="CNI / Passeport / Permis"
+                                   value="<?php echo $is_edit ? esc_attr($parcel->sender_id_card) : ''; ?>">
+                            <small>Pour vérification d'identité</small>
                         </div>
 
                         <!-- Nom destinataire avec autocomplete -->
@@ -347,45 +431,36 @@ class Colis224_Parcels {
                             <textarea name="recipient_address" id="recipient_address" rows="2" required><?php echo $is_edit ? esc_textarea($parcel->recipient_address) : ''; ?></textarea>
                         </div>
 
-                        <!-- Pays d'origine -->
+                        <!-- Pays d'origine (v2.18.26: avec drapeaux) -->
                         <div class="colis224-form-group">
-                            <label for="origin_country_id">Pays d'Origine</label>
+                            <label for="origin_country_id">🌍 Pays d'Origine</label>
                             <select name="origin_country_id" id="origin_country_id">
-                                <option value="">Sélectionner</option>
-                                <?php foreach ($countries as $country): ?>
-                                <option value="<?php echo $country->id; ?>"
-                                        <?php echo $is_edit && $parcel->origin_country_id == $country->id ? 'selected' : ''; ?>>
-                                    <?php echo esc_html($country->name); ?>
-                                </option>
-                                <?php endforeach; ?>
+                                <?php echo Colis224_Emojis::render_country_options(
+                                    $countries,
+                                    $is_edit ? $parcel->origin_country_id : ''
+                                ); ?>
                             </select>
                         </div>
 
-                        <!-- Pays de destination -->
+                        <!-- Pays de destination (v2.18.26: avec drapeaux) -->
                         <div class="colis224-form-group">
-                            <label for="destination_country_id">Pays de Destination</label>
+                            <label for="destination_country_id">🌍 Pays de Destination</label>
                             <select name="destination_country_id" id="destination_country_id">
-                                <option value="">Sélectionner</option>
-                                <?php foreach ($countries as $country): ?>
-                                <option value="<?php echo $country->id; ?>"
-                                        <?php echo $is_edit && $parcel->destination_country_id == $country->id ? 'selected' : ''; ?>>
-                                    <?php echo esc_html($country->name); ?>
-                                </option>
-                                <?php endforeach; ?>
+                                <?php echo Colis224_Emojis::render_country_options(
+                                    $countries,
+                                    $is_edit ? $parcel->destination_country_id : ''
+                                ); ?>
                             </select>
                         </div>
 
-                        <!-- Mode de transport -->
+                        <!-- Mode de transport (v2.18.26: avec emojis) -->
                         <div class="colis224-form-group">
-                            <label for="transport_mode_id">Mode de Transport</label>
+                            <label for="transport_mode_id">🚚 Mode de Transport</label>
                             <select name="transport_mode_id" id="transport_mode_id">
-                                <option value="">Sélectionner</option>
-                                <?php foreach ($transport_modes as $mode): ?>
-                                <option value="<?php echo $mode->id; ?>"
-                                        <?php echo $is_edit && $parcel->transport_mode_id == $mode->id ? 'selected' : ''; ?>>
-                                    <?php echo esc_html($mode->name); ?>
-                                </option>
-                                <?php endforeach; ?>
+                                <?php echo Colis224_Emojis::render_transport_options(
+                                    $transport_modes,
+                                    $is_edit ? $parcel->transport_mode_id : ''
+                                ); ?>
                             </select>
                         </div>
 
@@ -480,15 +555,15 @@ class Colis224_Parcels {
                                    value="<?php echo $is_edit ? esc_attr($parcel->delivery_date) : ''; ?>">
                         </div>
 
-                        <!-- Statut -->
+                        <!-- Statut (v2.18.26: avec emojis) -->
                         <div class="colis224-form-group">
-                            <label for="status">Statut *</label>
+                            <label for="status">📦 Statut *</label>
                             <select name="status" id="status" required>
-                                <option value="En attente" <?php echo $is_edit && $parcel->status == 'En attente' ? 'selected' : ''; ?>>En attente</option>
-                                <option value="Expédié" <?php echo $is_edit && $parcel->status == 'Expédié' ? 'selected' : ''; ?>>Expédié</option>
-                                <option value="En transit" <?php echo $is_edit && $parcel->status == 'En transit' ? 'selected' : ''; ?>>En transit</option>
-                                <option value="Livré" <?php echo $is_edit && $parcel->status == 'Livré' ? 'selected' : ''; ?>>Livré</option>
-                                <option value="Retour" <?php echo $is_edit && $parcel->status == 'Retour' ? 'selected' : ''; ?>>Retour</option>
+                                <option value="En attente" <?php echo $is_edit && $parcel->status == 'En attente' ? 'selected' : ''; ?>>⏳ En attente</option>
+                                <option value="Expédié" <?php echo $is_edit && $parcel->status == 'Expédié' ? 'selected' : ''; ?>>📦 Expédié</option>
+                                <option value="En transit" <?php echo $is_edit && $parcel->status == 'En transit' ? 'selected' : ''; ?>>🚚 En transit</option>
+                                <option value="Livré" <?php echo $is_edit && $parcel->status == 'Livré' ? 'selected' : ''; ?>>✅ Livré</option>
+                                <option value="Retour" <?php echo $is_edit && $parcel->status == 'Retour' ? 'selected' : ''; ?>>↩️ Retour</option>
                             </select>
                         </div>
 
@@ -522,13 +597,13 @@ class Colis224_Parcels {
                             </select>
                         </div>
 
-                        <!-- Statut paiement -->
+                        <!-- Statut paiement (v2.18.26: avec emojis) -->
                         <div class="colis224-form-group">
-                            <label for="payment_status">Statut Paiement *</label>
+                            <label for="payment_status">💰 Statut Paiement *</label>
                             <select name="payment_status" id="payment_status" required>
-                                <option value="Non payé" <?php echo $is_edit && $parcel->payment_status == 'Non payé' ? 'selected' : ''; ?>>Non payé</option>
-                                <option value="Partiel" <?php echo $is_edit && $parcel->payment_status == 'Partiel' ? 'selected' : ''; ?>>Partiel</option>
-                                <option value="Payé" <?php echo $is_edit && $parcel->payment_status == 'Payé' ? 'selected' : ''; ?>>Payé</option>
+                                <option value="Non payé" <?php echo $is_edit && $parcel->payment_status == 'Non payé' ? 'selected' : ''; ?>>❌ Non payé</option>
+                                <option value="Partiel" <?php echo $is_edit && $parcel->payment_status == 'Partiel' ? 'selected' : ''; ?>>💵 Partiel</option>
+                                <option value="Payé" <?php echo $is_edit && $parcel->payment_status == 'Payé' ? 'selected' : ''; ?>>💰 Payé</option>
                             </select>
                         </div>
 
@@ -539,10 +614,98 @@ class Colis224_Parcels {
                                    value="<?php echo $is_edit ? esc_attr($parcel->paid_amount) : '0'; ?>">
                         </div>
 
+                        <!-- Section Documents et Photos -->
+                        <div class="colis224-form-group colis224-full-width" style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+                            <h3 style="margin-top: 0; color: #667eea;">
+                                <span class="dashicons dashicons-camera"></span> 📎 Documents et Photos
+                            </h3>
+
+                            <div class="colis224-form-grid">
+                                <!-- Photo du reçu -->
+                                <div class="colis224-form-group">
+                                    <label for="receipt_photo">📄 Photo du Reçu</label>
+                                    <input type="file" name="receipt_photo" id="receipt_photo" accept="image/*,.pdf">
+                                    <small style="display: block; margin-top: 5px; color: #666;">
+                                        📌 <strong>1 seul fichier</strong> • Formats: JPG, PNG, PDF (max 5MB)
+                                    </small>
+                                    <?php if ($is_edit && !empty($parcel->receipt_photo)): ?>
+                                    <div style="margin-top: 10px; background: #e7f3ff; padding: 10px; border-radius: 4px; border-left: 3px solid #2271b1;">
+                                        <strong style="color: #0c5589;">📎 Fichier actuel:</strong><br>
+                                        <?php $upload_dir = wp_upload_dir(); ?>
+                                        <a href="<?php echo esc_url($upload_dir['baseurl'] . '/colis224/receipts/' . basename($parcel->receipt_photo)); ?>" target="_blank" style="color: #2271b1; text-decoration: none;">
+                                            <span class="dashicons dashicons-media-document" style="vertical-align: middle;"></span>
+                                            <?php echo esc_html(basename($parcel->receipt_photo)); ?>
+                                        </a>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <!-- Photos du colis -->
+                                <div class="colis224-form-group">
+                                    <label for="parcel_photos">📸 Photos du Colis</label>
+                                    <input type="file" name="parcel_photos[]" id="parcel_photos" accept="image/*" multiple>
+                                    <small style="display: block; margin-top: 5px; color: #666;">
+                                        📌 <strong>Maximum 5 photos</strong> • Formats: JPG, PNG (max 2MB par photo)
+                                    </small>
+                                    <?php if ($is_edit && !empty($parcel->photos)): ?>
+                                    <div style="margin-top: 10px;">
+                                        <strong>Photos actuelles:</strong>
+                                        <?php
+                                        $photos = json_decode($parcel->photos, true);
+                                        $upload_dir = wp_upload_dir();
+                                        if (is_array($photos)):
+                                            foreach ($photos as $photo):
+                                        ?>
+                                        <div style="display: inline-block; margin: 5px;">
+                                            <a href="<?php echo esc_url($upload_dir['baseurl'] . '/colis224/photos/' . basename($photo)); ?>" target="_blank">
+                                                <img src="<?php echo esc_url($upload_dir['baseurl'] . '/colis224/photos/' . basename($photo)); ?>"
+                                                     style="max-width: 100px; max-height: 100px; border-radius: 4px; border: 2px solid #ddd;">
+                                            </a>
+                                        </div>
+                                        <?php
+                                            endforeach;
+                                        endif;
+                                        ?>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Notes -->
                         <div class="colis224-form-group colis224-full-width">
-                            <label for="notes">Notes Internes</label>
-                            <textarea name="notes" id="notes" rows="3"><?php echo $is_edit ? esc_textarea($parcel->notes) : ''; ?></textarea>
+                            <label for="notes">📝 Notes Internes</label>
+                            <textarea name="notes" id="notes" rows="3" placeholder="Informations complémentaires..."><?php echo $is_edit ? esc_textarea($parcel->notes) : ''; ?></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Section Agent Enregistreur -->
+                    <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; margin-top: 20px;">
+                        <h3 style="color: white; margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px;">
+                            <span class="dashicons dashicons-businessman" style="font-size: 24px;"></span>
+                            👨‍💼 Traçabilité
+                        </h3>
+                        <div class="colis224-form-grid">
+                            <div class="colis224-form-group">
+                                <label for="recorded_by_agent_id" style="color: white; font-weight: 600;">
+                                    ✍️ Enregistré par (Agent)
+                                </label>
+                                <select name="recorded_by_agent_id" id="recorded_by_agent_id" style="background: rgba(255,255,255,0.95);">
+                                    <option value="">-- Sélectionner un agent --</option>
+                                    <?php foreach ($agents as $agent): ?>
+                                    <option value="<?php echo $agent->id; ?>"
+                                            <?php echo ($is_edit && $parcel->recorded_by_agent_id == $agent->id) ? 'selected' : ''; ?>>
+                                        <?php echo esc_html($agent->name); ?>
+                                        <?php if (!empty($agent->role)): ?>
+                                            (<?php echo esc_html($agent->role); ?>)
+                                        <?php endif; ?>
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small style="color: rgba(255,255,255,0.9);">
+                                    🔍 Pour identifier qui a créé ce colis
+                                </small>
+                            </div>
                         </div>
                     </div>
 
@@ -581,6 +744,58 @@ class Colis224_Parcels {
 
             $('#unit_price, #discount_type, #discount_value').on('input change', calculateTotal);
 
+            // Validation du nombre de photos (max 5)
+            $('#parcel_photos').on('change', function() {
+                var files = this.files;
+                if (files.length > 5) {
+                    alert('⚠️ Vous pouvez sélectionner maximum 5 photos du colis.\n\nNombre de photos sélectionnées : ' + files.length);
+                    this.value = ''; // Réinitialiser
+                    return false;
+                }
+
+                // Vérifier la taille de chaque photo (max 2MB)
+                var maxSize = 2 * 1024 * 1024; // 2MB
+                var oversized = [];
+                for (var i = 0; i < files.length; i++) {
+                    if (files[i].size > maxSize) {
+                        oversized.push(files[i].name);
+                    }
+                }
+
+                if (oversized.length > 0) {
+                    alert('⚠️ Les fichiers suivants dépassent 2MB :\n\n' + oversized.join('\n') + '\n\nVeuillez sélectionner des fichiers plus petits.');
+                    this.value = ''; // Réinitialiser
+                    return false;
+                }
+
+                // Afficher un message de confirmation
+                if (files.length > 0) {
+                    $(this).next('small').after('<div class="notice notice-success inline" style="margin-top: 10px; padding: 8px;"><p style="margin: 0;">✅ ' + files.length + ' photo(s) sélectionnée(s)</p></div>');
+                    setTimeout(function() {
+                        $('.notice.inline').fadeOut(function() { $(this).remove(); });
+                    }, 3000);
+                }
+            });
+
+            // Validation du reçu (max 5MB)
+            $('#receipt_photo').on('change', function() {
+                var file = this.files[0];
+                if (file) {
+                    var maxSize = 5 * 1024 * 1024; // 5MB
+                    if (file.size > maxSize) {
+                        alert('⚠️ Le fichier dépasse 5MB.\n\nTaille : ' + (file.size / 1024 / 1024).toFixed(2) + ' MB\n\nVeuillez sélectionner un fichier plus petit.');
+                        this.value = ''; // Réinitialiser
+                        return false;
+                    }
+
+                    // Afficher un message de confirmation
+                    $(this).next('small').after('<div class="notice notice-success inline" style="margin-top: 10px; padding: 8px;"><p style="margin: 0;">✅ Reçu sélectionné : ' + file.name + '</p></div>');
+                    setTimeout(function() {
+                        $('.notice.inline').fadeOut(function() { $(this).remove(); });
+                    }, 3000);
+                }
+            });
+
             // Génération automatique du numéro de suivi
             $('#recipient_phone').on('blur', function() {
                 if ($('#tracking_number').val() === '') {
@@ -618,9 +833,24 @@ class Colis224_Parcels {
                     });
                 },
                 select: function(event, ui) {
+                    // Remplir l'ID et le champ de recherche
                     $('#client_id').val(ui.item.id);
                     $('#client_search').val(ui.item.label);
+
+                    // AUTO-REMPLISSAGE : Charger toutes les infos du client
+                    if (ui.item.email) {
+                        $('#client_email').val(ui.item.email);
+                    }
+
+                    // Charger les infos de fidélité
                     loadLoyaltyInfo(ui.item.id);
+
+                    // Afficher une notification visuelle
+                    $('#client_email').css('background-color', '#d4edda').delay(800).queue(function(next) {
+                        $(this).css('background-color', 'rgba(255,255,255,0.95)');
+                        next();
+                    });
+
                     return false;
                 },
                 focus: function(event, ui) {
@@ -788,6 +1018,19 @@ class Colis224_Parcels {
     private static function display_details($parcel_id) {
         global $wpdb;
 
+        // Vérifier si l'utilisateur a un rôle non-financier (v2.18.3)
+        $current_user = wp_get_current_user();
+        $user_role = 'admin';
+        if (class_exists('Colis224_Permissions')) {
+            $user_role = Colis224_Permissions::get_user_colis224_role($current_user->ID);
+            if (!$user_role) {
+                $user_role = 'admin';
+            }
+        }
+        $hide_financial = ($user_role === 'colis224_agent') ||
+                         in_array('editor', $current_user->roles) ||
+                         in_array('author', $current_user->roles);
+
         $table_parcels = $wpdb->prefix . 'colis224_parcels';
         $parcel = $wpdb->get_row($wpdb->prepare("
             SELECT p.*, c.name as client_name, c.phone as client_phone,
@@ -818,10 +1061,12 @@ class Colis224_Parcels {
                     <span class="dashicons dashicons-arrow-left-alt"></span>
                     Retour à la liste
                 </a>
+                <?php if (!$hide_financial): // Seuls les admins peuvent modifier ?>
                 <a href="?page=colis224-parcels&action=edit&id=<?php echo $parcel->id; ?>" class="page-title-action">
                     <span class="dashicons dashicons-edit"></span>
                     Modifier
                 </a>
+                <?php endif; ?>
             </h1>
 
             <!-- Actions rapides -->
@@ -901,6 +1146,7 @@ class Colis224_Parcels {
                     </table>
                 </div>
 
+                <?php if (!$hide_financial): ?>
                 <!-- Paiement -->
                 <div class="colis224-card">
                     <h3><span class="dashicons dashicons-money-alt"></span> Informations de Paiement</h3>
@@ -946,6 +1192,7 @@ class Colis224_Parcels {
                         </tr>
                     </table>
                 </div>
+                <?php endif; ?>
 
                 <!-- Dates -->
                 <div class="colis224-card">
@@ -981,6 +1228,319 @@ class Colis224_Parcels {
                 <p><?php echo nl2br(esc_html($parcel->notes)); ?></p>
             </div>
             <?php endif; ?>
+
+            <!-- Documents et Photos -->
+            <?php if (!empty($parcel->receipt_photo) || !empty($parcel->photos)): ?>
+            <div class="colis224-card">
+                <h3><span class="dashicons dashicons-camera"></span> 📸 Documents et Photos</h3>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+
+                    <!-- Photo du Reçu -->
+                    <?php if (!empty($parcel->receipt_photo)):
+                        $upload_dir = wp_upload_dir();
+                        $receipt_url = $upload_dir['baseurl'] . '/colis224/receipts/' . basename($parcel->receipt_photo);
+                        $receipt_path = $upload_dir['basedir'] . '/colis224/receipts/' . basename($parcel->receipt_photo);
+                        $file_exists = file_exists($receipt_path);
+                    ?>
+                    <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 2px solid #e0e0e0;">
+                        <h4 style="margin: 0 0 10px 0; color: #2271b1; display: flex; align-items: center; gap: 8px;">
+                            <span class="dashicons dashicons-media-document" style="font-size: 20px;"></span>
+                            📄 Reçu du Colis
+                        </h4>
+                        <?php if ($file_exists): ?>
+                            <?php
+                            $file_extension = strtolower(pathinfo($parcel->receipt_photo, PATHINFO_EXTENSION));
+                            $is_image = in_array($file_extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                            ?>
+
+                            <?php if ($is_image): ?>
+                                <div style="margin-bottom: 10px;">
+                                    <a href="<?php echo esc_url($receipt_url); ?>" target="_blank">
+                                        <img src="<?php echo esc_url($receipt_url); ?>"
+                                             alt="Reçu"
+                                             style="width: 100%; height: 200px; object-fit: cover; border-radius: 6px; cursor: pointer; transition: transform 0.2s;"
+                                             onmouseover="this.style.transform='scale(1.02)'"
+                                             onmouseout="this.style.transform='scale(1)'">
+                                    </a>
+                                </div>
+                            <?php else: ?>
+                                <div style="background: #fff; padding: 30px; text-align: center; border-radius: 6px; margin-bottom: 10px;">
+                                    <span class="dashicons dashicons-media-document" style="font-size: 48px; color: #999;"></span>
+                                    <p style="margin: 10px 0 0 0; color: #666;">Document PDF</p>
+                                </div>
+                            <?php endif; ?>
+
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <a href="<?php echo esc_url($receipt_url); ?>" target="_blank" class="button button-small" style="flex: 1;">
+                                    <span class="dashicons dashicons-visibility" style="vertical-align: middle;"></span>
+                                    Voir
+                                </a>
+                                <a href="<?php echo esc_url($receipt_url); ?>" download class="button button-small" style="flex: 1;">
+                                    <span class="dashicons dashicons-download" style="vertical-align: middle;"></span>
+                                    Télécharger
+                                </a>
+                            </div>
+                            <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                                📎 <?php echo esc_html(basename($parcel->receipt_photo)); ?>
+                            </div>
+                        <?php else: ?>
+                            <div style="background: #fff3cd; padding: 15px; border-radius: 6px; border-left: 4px solid #ffc107;">
+                                <p style="margin: 0; color: #856404;">
+                                    <span class="dashicons dashicons-warning" style="vertical-align: middle;"></span>
+                                    Fichier introuvable sur le serveur
+                                </p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Photos du Colis -->
+                    <?php if (!empty($parcel->photos)):
+                        $photos = json_decode($parcel->photos, true);
+                        if (!is_array($photos)) {
+                            $photos = explode(',', $parcel->photos);
+                        }
+                        $photos = array_filter($photos);
+
+                        // Limiter à 5 photos maximum
+                        $photos = array_slice($photos, 0, 5);
+
+                        if (!empty($photos)):
+                    ?>
+                    <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 2px solid #e0e0e0;">
+                        <h4 style="margin: 0 0 10px 0; color: #2271b1; display: flex; align-items: center; gap: 8px;">
+                            <span class="dashicons dashicons-format-gallery" style="font-size: 20px;"></span>
+                            📷 Photos du Colis
+                            <span style="background: #2271b1; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: auto;">
+                                <?php echo count($photos); ?>/5
+                            </span>
+                        </h4>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 10px;">
+                            <?php foreach ($photos as $index => $photo):
+                                $photo = trim($photo);
+                                $photo_url = $upload_dir['baseurl'] . '/colis224/photos/' . basename($photo);
+                                $photo_path = $upload_dir['basedir'] . '/colis224/photos/' . basename($photo);
+                                $photo_exists = file_exists($photo_path);
+                            ?>
+                                <?php if ($photo_exists): ?>
+                                <div style="position: relative;">
+                                    <a href="<?php echo esc_url($photo_url); ?>" target="_blank" style="display: block;">
+                                        <img src="<?php echo esc_url($photo_url); ?>"
+                                             alt="Photo <?php echo $index + 1; ?>"
+                                             style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; cursor: pointer; transition: transform 0.2s; border: 2px solid #ddd;"
+                                             onmouseover="this.style.transform='scale(1.05)'; this.style.borderColor='#2271b1'"
+                                             onmouseout="this.style.transform='scale(1)'; this.style.borderColor='#ddd'">
+                                    </a>
+                                    <div style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">
+                                        <?php echo $index + 1; ?>
+                                    </div>
+                                </div>
+                                <?php else: ?>
+                                <div style="background: #fff; border: 2px dashed #ccc; border-radius: 6px; height: 120px; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 10px;">
+                                    <span class="dashicons dashicons-warning" style="font-size: 24px; color: #999;"></span>
+                                    <span style="font-size: 10px; color: #999; margin-top: 5px; text-align: center;">Introuvable</span>
+                                </div>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <?php if (count($photos) > 0): ?>
+                        <div style="background: #e7f3ff; padding: 10px; border-radius: 6px; border-left: 4px solid #2271b1;">
+                            <p style="margin: 0; font-size: 12px; color: #0c5589;">
+                                <span class="dashicons dashicons-info" style="vertical-align: middle;"></span>
+                                Cliquez sur une photo pour l'agrandir dans un nouvel onglet
+                            </p>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                    <?php endif; ?>
+
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * Afficher l'écran de confirmation avant validation finale
+     */
+    private static function display_parcel_confirmation() {
+        global $wpdb;
+
+        // Récupérer les noms depuis les IDs pour l'affichage
+        $client_name = '';
+        if (!empty($_POST['client_id'])) {
+            $client = $wpdb->get_row($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}colis224_clients WHERE id = %d",
+                intval($_POST['client_id'])
+            ));
+            $client_name = $client ? $client->name : 'N/A';
+        }
+
+        $origin_country = '';
+        if (!empty($_POST['origin_country_id'])) {
+            $country = $wpdb->get_row($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}colis224_countries WHERE id = %d",
+                intval($_POST['origin_country_id'])
+            ));
+            $origin_country = $country ? $country->name : 'N/A';
+        }
+
+        $destination_country = '';
+        if (!empty($_POST['destination_country_id'])) {
+            $country = $wpdb->get_row($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}colis224_countries WHERE id = %d",
+                intval($_POST['destination_country_id'])
+            ));
+            $destination_country = $country ? $country->name : 'N/A';
+        }
+
+        $transport_mode = '';
+        if (!empty($_POST['transport_mode_id'])) {
+            $transport = $wpdb->get_row($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}colis224_transport_modes WHERE id = %d",
+                intval($_POST['transport_mode_id'])
+            ));
+            $transport_mode = $transport ? $transport->name : 'N/A';
+        }
+
+        $category = '';
+        if (!empty($_POST['category_id'])) {
+            $cat = $wpdb->get_row($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}colis224_parcel_categories WHERE id = %d",
+                intval($_POST['category_id'])
+            ));
+            $category = $cat ? $cat->name : 'N/A';
+        }
+
+        $tracking_number = !empty($_POST['tracking_number']) ? sanitize_text_field($_POST['tracking_number']) : '[Sera généré automatiquement]';
+
+        ?>
+        <div class="wrap colis224-wrap">
+            <h1 class="colis224-title">
+                <span class="dashicons dashicons-visibility"></span>
+                Confirmation - Vérifiez les informations
+            </h1>
+
+            <div class="colis224-card" style="background: #f0f8ff; border-left: 4px solid #2271b1;">
+                <div style="background: #2271b1; color: white; padding: 15px; margin: -20px -20px 20px -20px; border-radius: 8px 8px 0 0;">
+                    <h2 style="margin: 0; color: white;">
+                        <span class="dashicons dashicons-info" style="vertical-align: middle;"></span>
+                        📋 Résumé du Colis - Vérifiez Avant de Valider
+                    </h2>
+                    <p style="margin: 10px 0 0 0; opacity: 0.9;">Une fois validé, ces informations seront enregistrées.</p>
+                </div>
+
+                <div class="colis224-form-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <!-- Informations Client -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-admin-users"></span> Informations Client
+                        </h3>
+                        <p><strong>Client:</strong> <?php echo esc_html($client_name ?: 'Non sélectionné'); ?></p>
+                        <p><strong>Expéditeur:</strong> <?php echo esc_html(sanitize_text_field($_POST['sender_name'])); ?></p>
+                    </div>
+
+                    <!-- Informations Destinataire -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-location"></span> Destinataire
+                        </h3>
+                        <p><strong>Nom:</strong> <?php echo esc_html(sanitize_text_field($_POST['recipient_name'])); ?></p>
+                        <p><strong>Téléphone:</strong> <?php echo esc_html(sanitize_text_field($_POST['recipient_phone'])); ?></p>
+                        <p><strong>Adresse:</strong> <?php echo esc_html(sanitize_textarea_field($_POST['recipient_address'])); ?></p>
+                    </div>
+
+                    <!-- Informations Colis -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-archive"></span> Détails du Colis
+                        </h3>
+                        <p><strong>Numéro de suivi:</strong> <?php echo esc_html($tracking_number); ?></p>
+                        <p><strong>Pays origine:</strong> <?php echo esc_html($origin_country); ?></p>
+                        <p><strong>Pays destination:</strong> <?php echo esc_html($destination_country); ?></p>
+                        <p><strong>Mode de transport:</strong> <?php echo esc_html($transport_mode); ?></p>
+                        <p><strong>Catégorie:</strong> <?php echo esc_html($category); ?></p>
+                        <p><strong>Poids:</strong> <?php echo esc_html(floatval($_POST['weight'])); ?> kg</p>
+                    </div>
+
+                    <!-- Informations Financières -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-money-alt"></span> Informations Financières
+                        </h3>
+                        <p><strong>Prix unitaire:</strong> <?php echo esc_html(number_format(floatval($_POST['unit_price']), 0, ',', ' ')); ?> <?php echo esc_html(sanitize_text_field($_POST['currency'])); ?></p>
+                        <p><strong>Remise:</strong> <?php echo esc_html(floatval($_POST['discount_value'])); ?> (<?php echo esc_html(sanitize_text_field($_POST['discount_type'])); ?>)</p>
+                        <p><strong>Montant total:</strong> <?php echo esc_html(number_format(floatval($_POST['total_amount']), 0, ',', ' ')); ?> <?php echo esc_html(sanitize_text_field($_POST['currency'])); ?></p>
+                        <p><strong>Montant payé:</strong> <?php echo esc_html(number_format(floatval($_POST['paid_amount']), 0, ',', ' ')); ?> <?php echo esc_html(sanitize_text_field($_POST['currency'])); ?></p>
+                        <p><strong>Reste à payer:</strong> <?php echo esc_html(number_format(floatval($_POST['total_amount']) - floatval($_POST['paid_amount']), 0, ',', ' ')); ?> <?php echo esc_html(sanitize_text_field($_POST['currency'])); ?></p>
+                        <p><strong>Méthode de paiement:</strong> <?php echo esc_html(sanitize_text_field($_POST['payment_method'])); ?></p>
+                        <p><strong>Statut paiement:</strong> <?php echo esc_html(sanitize_text_field($_POST['payment_status'])); ?></p>
+                    </div>
+
+                    <!-- Statut et Dates -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-calendar-alt"></span> Statut et Dates
+                        </h3>
+                        <p><strong>Statut:</strong> <?php echo esc_html(sanitize_text_field($_POST['status'])); ?></p>
+                        <p><strong>Date de réception:</strong> <?php echo !empty($_POST['reception_date']) ? esc_html(sanitize_text_field($_POST['reception_date'])) : 'N/A'; ?></p>
+                        <p><strong>Date d'expédition:</strong> <?php echo !empty($_POST['shipping_date']) ? esc_html(sanitize_text_field($_POST['shipping_date'])) : 'N/A'; ?></p>
+                        <p><strong>Date de livraison:</strong> <?php echo !empty($_POST['delivery_date']) ? esc_html(sanitize_text_field($_POST['delivery_date'])) : 'N/A'; ?></p>
+                        <p><strong>Livraison estimée:</strong> <?php echo !empty($_POST['estimated_delivery_date']) ? esc_html(sanitize_text_field($_POST['estimated_delivery_date'])) : 'N/A'; ?></p>
+                    </div>
+
+                    <!-- Notes -->
+                    <?php if (!empty($_POST['notes'])): ?>
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-top: 0; color: #2271b1; border-bottom: 2px solid #2271b1; padding-bottom: 10px;">
+                            <span class="dashicons dashicons-edit"></span> Notes
+                        </h3>
+                        <p><?php echo nl2br(esc_html(sanitize_textarea_field($_POST['notes']))); ?></p>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Formulaires pour les deux actions -->
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd; display: flex; gap: 20px; justify-content: center;">
+                    <!-- Formulaire pour Modifier -->
+                    <form method="post" action="?page=colis224-parcels&action=add" style="display: inline;">
+                        <?php
+                        // Réinjecter toutes les données POST dans des champs cachés
+                        foreach ($_POST as $key => $value) {
+                            if ($key !== 'colis224_confirmed' && !is_array($value)) {
+                                echo '<input type="hidden" name="' . esc_attr($key) . '" value="' . esc_attr($value) . '">';
+                            }
+                        }
+                        ?>
+                        <button type="submit" class="button button-secondary" style="padding: 15px 40px; font-size: 16px; height: auto;">
+                            <span class="dashicons dashicons-edit" style="vertical-align: middle;"></span>
+                            ✏️ Modifier
+                        </button>
+                    </form>
+
+                    <!-- Formulaire pour Valider -->
+                    <form method="post" action="" style="display: inline;">
+                        <?php
+                        // Réinjecter toutes les données POST dans des champs cachés
+                        foreach ($_POST as $key => $value) {
+                            if (!is_array($value)) {
+                                echo '<input type="hidden" name="' . esc_attr($key) . '" value="' . esc_attr($value) . '">';
+                            }
+                        }
+                        ?>
+                        <input type="hidden" name="colis224_confirmed" value="1">
+                        <button type="submit" class="button button-primary" style="padding: 15px 40px; font-size: 16px; height: auto; background: #00a32a; border-color: #00a32a;">
+                            <span class="dashicons dashicons-yes-alt" style="vertical-align: middle;"></span>
+                            ✅ Valider et Enregistrer
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
         <?php
     }
@@ -993,6 +1553,15 @@ class Colis224_Parcels {
             wp_die('Erreur de sécurité');
         }
 
+        // Vérifier si l'utilisateur a confirmé (étape 2) ou si c'est la première soumission (étape 1)
+        $is_confirmed = isset($_POST['colis224_confirmed']) && $_POST['colis224_confirmed'] === '1';
+
+        // Si pas encore confirmé, afficher l'écran de confirmation
+        if (!$is_confirmed) {
+            self::display_parcel_confirmation();
+            return;
+        }
+
         global $wpdb;
         $table_parcels = $wpdb->prefix . 'colis224_parcels';
 
@@ -1001,45 +1570,65 @@ class Colis224_Parcels {
         if (empty($tracking_number)) {
             $phone = sanitize_text_field($_POST['recipient_phone']);
             $last4 = substr(preg_replace('/\s/', '', $phone), -4);
-            
-            // Boucle pour garantir l'unicité du numéro de suivi
+
+            // Boucle pour garantir l'unicité du numéro de suivi avec protection contre les doublons
             $attempts = 0;
-            $max_attempts = 10;
-            
+            $max_attempts = 20;
+            $tracking_number_generated = false;
+
             do {
                 $attempts++;
-                
+
                 // Première tentative : PA + 4 derniers chiffres du téléphone
                 if ($attempts === 1) {
                     $tracking_number = 'PA' . $last4;
+                } else if ($attempts <= 5) {
+                    // Tentatives 2-5 : Ajouter un suffixe séquentiel simple
+                    $tracking_number = 'PA' . $last4 . '-' . ($attempts - 1);
                 } else {
-                    // Tentatives suivantes : Ajouter un suffixe avec timestamp + random
-                    $suffix = substr(time(), -3) . rand(10, 99);
+                    // Tentatives suivantes : Utiliser timestamp + random pour garantir l'unicité
+                    $suffix = substr(time(), -4) . str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
                     $tracking_number = 'PA' . $last4 . '-' . $suffix;
                 }
-                
-                // Vérifier l'unicité
+
+                // Vérifier l'unicité avec un verrou pour éviter les race conditions
                 $count = $wpdb->get_var($wpdb->prepare(
-                    "SELECT COUNT(*) FROM $table_parcels WHERE tracking_number = %s", 
+                    "SELECT COUNT(*) FROM $table_parcels WHERE tracking_number = %s",
                     $tracking_number
                 ));
-                
-                // Si on a essayé 10 fois sans succès, utiliser un numéro complètement unique
-                if ($attempts >= $max_attempts && $count > 0) {
-                    $tracking_number = 'PA' . strtoupper(wp_generate_password(8, false, false));
-                    $count = 0; // Forcer la sortie de la boucle
+
+                if ($count == 0) {
+                    $tracking_number_generated = true;
+                    break;
                 }
-                
-            } while ($count > 0 && $attempts < $max_attempts);
+
+                // Si on a essayé 20 fois sans succès, utiliser un numéro complètement unique avec timestamp
+                if ($attempts >= $max_attempts) {
+                    $tracking_number = 'PA' . date('ymd') . '-' . strtoupper(substr(wp_generate_password(6, false, false), 0, 6));
+                    $tracking_number_generated = true;
+                    break;
+                }
+
+                // Petit délai pour éviter les collisions en cas de création simultanée
+                if ($attempts > 1) {
+                    usleep(50000); // 50ms
+                }
+
+            } while ($attempts < $max_attempts);
+
+            if (!$tracking_number_generated) {
+                echo '<div class="notice notice-error"><p>❌ Erreur : Impossible de générer un numéro de suivi unique après ' . $max_attempts . ' tentatives. Veuillez réessayer.</p></div>';
+                return;
+            }
         } else {
             // Si un tracking number est fourni manuellement, vérifier qu'il n'existe pas déjà
             $count = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM $table_parcels WHERE tracking_number = %s", 
+                "SELECT COUNT(*) FROM $table_parcels WHERE tracking_number = %s",
                 $tracking_number
             ));
-            
+
             if ($count > 0) {
-                echo '<div class="notice notice-error"><p>❌ Erreur : Le numéro de suivi ' . esc_html($tracking_number) . ' existe déjà. Veuillez en choisir un autre.</p></div>';
+                echo '<div class="notice notice-error"><p>❌ Erreur : Le numéro de suivi ' . esc_html($tracking_number) . ' existe déjà. Veuillez en choisir un autre ou laissez le champ vide pour une génération automatique.</p></div>';
                 return;
             }
         }
@@ -1054,16 +1643,85 @@ class Colis224_Parcels {
         $user_role = Colis224_Permissions::get_user_colis224_role($current_user->ID);
 
         // Déterminer le statut de validation basé sur le rôle
-        // Les admins créent des colis pré-approuvés, les agents doivent attendre validation
-        $validation_status = 'approved'; // Par défaut
-        if ($user_role === 'colis224_agent') {
-            $validation_status = 'pending'; // Les agents doivent attendre validation
+        // Les admins créent des colis pré-validés, les agents doivent attendre validation
+        $validation_status = 'validated'; // Par défaut pour admin
+        if ($user_role === 'colis224_agent' || in_array('editor', $current_user->roles) || in_array('author', $current_user->roles)) {
+            $validation_status = 'pending'; // Les agents, éditeurs et auteurs doivent attendre validation
+        }
+
+        // === GESTION DES UPLOADS DE FICHIERS ===
+        $upload_dir = wp_upload_dir();
+        $colis224_upload_dir = $upload_dir['basedir'] . '/colis224';
+
+        // Créer les dossiers si nécessaire
+        $receipts_dir = $colis224_upload_dir . '/receipts';
+        $photos_dir = $colis224_upload_dir . '/photos';
+
+        if (!file_exists($receipts_dir)) {
+            wp_mkdir_p($receipts_dir);
+        }
+        if (!file_exists($photos_dir)) {
+            wp_mkdir_p($photos_dir);
+        }
+
+        $receipt_photo_path = null;
+        $parcel_photos_paths = array();
+
+        // Upload du reçu (1 seul fichier, max 5MB)
+        if (!empty($_FILES['receipt_photo']['name']) && $_FILES['receipt_photo']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['receipt_photo'];
+
+            // Vérifier la taille (max 5MB)
+            if ($file['size'] <= 5 * 1024 * 1024) {
+                $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $allowed_extensions = array('jpg', 'jpeg', 'png', 'gif', 'pdf');
+
+                if (in_array($file_extension, $allowed_extensions)) {
+                    $filename = 'receipt_' . time() . '_' . uniqid() . '.' . $file_extension;
+                    $destination = $receipts_dir . '/' . $filename;
+
+                    if (move_uploaded_file($file['tmp_name'], $destination)) {
+                        $receipt_photo_path = $filename;
+                    }
+                }
+            }
+        }
+
+        // Upload des photos du colis (max 5 photos, max 2MB chacune)
+        if (!empty($_FILES['parcel_photos']['name'][0])) {
+            $files = $_FILES['parcel_photos'];
+            $file_count = count($files['name']);
+
+            // Limiter à 5 photos maximum
+            $file_count = min($file_count, 5);
+
+            for ($i = 0; $i < $file_count; $i++) {
+                if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                    // Vérifier la taille (max 2MB)
+                    if ($files['size'][$i] <= 2 * 1024 * 1024) {
+                        $file_extension = strtolower(pathinfo($files['name'][$i], PATHINFO_EXTENSION));
+                        $allowed_extensions = array('jpg', 'jpeg', 'png', 'gif', 'webp');
+
+                        if (in_array($file_extension, $allowed_extensions)) {
+                            $filename = 'photo_' . time() . '_' . uniqid() . '_' . $i . '.' . $file_extension;
+                            $destination = $photos_dir . '/' . $filename;
+
+                            if (move_uploaded_file($files['tmp_name'][$i], $destination)) {
+                                $parcel_photos_paths[] = $filename;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         $data = array(
             'tracking_number' => $tracking_number,
             'client_id' => !empty($_POST['client_id']) ? intval($_POST['client_id']) : null,
+            'client_email' => !empty($_POST['client_email']) ? sanitize_email($_POST['client_email']) : null,
             'sender_name' => sanitize_text_field($_POST['sender_name']),
+            'sender_phone' => !empty($_POST['sender_phone']) ? sanitize_text_field($_POST['sender_phone']) : null,
+            'sender_id_card' => !empty($_POST['sender_id_card']) ? sanitize_text_field($_POST['sender_id_card']) : null,
             'recipient_name' => sanitize_text_field($_POST['recipient_name']),
             'recipient_phone' => sanitize_text_field($_POST['recipient_phone']),
             'recipient_address' => sanitize_textarea_field($_POST['recipient_address']),
@@ -1087,19 +1745,35 @@ class Colis224_Parcels {
             'paid_amount' => $paid_amount,
             'remaining_amount' => $remaining_amount,
             'driver_id' => !empty($_POST['driver_id']) ? intval($_POST['driver_id']) : null,
+            'recorded_by_agent_id' => !empty($_POST['recorded_by_agent_id']) ? intval($_POST['recorded_by_agent_id']) : null,
             'notes' => sanitize_textarea_field($_POST['notes']),
+            // Documents (v2.18.4)
+            'receipt_photo' => $receipt_photo_path,
+            'photos' => !empty($parcel_photos_paths) ? json_encode($parcel_photos_paths) : null,
             // Nouveaux champs v2.11.0 (validation hiérarchique)
             'created_by' => $current_user->ID,
             'validation_status' => $validation_status
         );
 
         // Si admin crée le colis, le marquer comme auto-validé
-        if ($validation_status === 'approved') {
+        if ($validation_status === 'validated') {
             $data['validated_by'] = $current_user->ID;
             $data['validated_at'] = current_time('mysql');
         }
 
         $result = $wpdb->insert($table_parcels, $data);
+
+        if ($result === false) {
+            // Afficher l'erreur SQL pour debug
+            echo '<div class="notice notice-error is-dismissible">';
+            echo '<p><strong>❌ Erreur lors de l\'enregistrement du colis</strong></p>';
+            if ($wpdb->last_error) {
+                echo '<p>Erreur SQL : ' . esc_html($wpdb->last_error) . '</p>';
+                echo '<p><em>Note : Si l\'erreur mentionne "Unknown column", veuillez désactiver puis réactiver le plugin pour mettre à jour la base de données.</em></p>';
+            }
+            echo '</div>';
+            return;
+        }
 
         if ($result) {
             $parcel_id = $wpdb->insert_id;
@@ -1180,67 +1854,109 @@ class Colis224_Parcels {
             }
         }
 
-        // RESTRICTIONS AGENTS (v2.11.0)
-        $is_agent = ($user_role === 'colis224_agent');
-        $is_validated = ($current_parcel->validation_status === 'approved');
+        // RESTRICTIONS AGENTS / EDITORS / AUTHORS (v2.18.3)
+        $is_restricted_role = ($user_role === 'colis224_agent') ||
+                              in_array('editor', $current_user->roles) ||
+                              in_array('author', $current_user->roles);
+        $is_admin = current_user_can('manage_options');
+
+        // Bloquer TOUTE modification pour les éditeurs/auteurs (pas seulement les validés)
+        if ($is_restricted_role && !$is_admin) {
+            echo '<div class="notice notice-error is-dismissible" style="border-left-color: #dc3545;">';
+            echo '<p><strong>🔒 MODIFICATION INTERDITE</strong></p>';
+            echo '<p style="font-size: 14px;">En tant qu\'éditeur/agent, vous <strong>ne pouvez pas modifier</strong> les colis existants.</p>';
+            echo '<p style="font-size: 13px; color: #666;">📌 <em>Seuls les administrateurs peuvent modifier les colis.</em></p>';
+            echo '<p style="font-size: 13px;">💡 Vous pouvez créer de nouveaux colis qui seront soumis pour validation.</p>';
+            echo '</div>';
+            return;
+        }
 
         // Calcul du montant restant
         $total_amount = floatval($_POST['total_amount']);
         $paid_amount = floatval($_POST['paid_amount']);
         $remaining_amount = $total_amount - $paid_amount;
 
-        // Bloquer les modifications sensibles pour les agents après validation admin
-        if ($is_agent && $is_validated) {
-            // Vérifier si l'agent tente de modifier des champs interdits
-            $forbidden_changes = array();
+        // === GESTION DES UPLOADS DE FICHIERS (UPDATE) ===
+        $upload_dir = wp_upload_dir();
+        $colis224_upload_dir = $upload_dir['basedir'] . '/colis224';
 
-            // Montants interdits
-            if (abs($total_amount - $current_parcel->total_amount) > 0.01) {
-                $forbidden_changes[] = 'montant total';
-            }
-            if (abs(floatval($_POST['unit_price']) - $current_parcel->unit_price) > 0.01) {
-                $forbidden_changes[] = 'prix unitaire';
-            }
-            if (abs(floatval($_POST['discount_value']) - $current_parcel->discount_value) > 0.01) {
-                $forbidden_changes[] = 'remise';
-            }
+        // Créer les dossiers si nécessaire
+        $receipts_dir = $colis224_upload_dir . '/receipts';
+        $photos_dir = $colis224_upload_dir . '/photos';
 
-            // Paiement interdit
-            if (sanitize_text_field($_POST['payment_status']) !== $current_parcel->payment_status) {
-                $forbidden_changes[] = 'statut de paiement';
-            }
-            if (abs($paid_amount - $current_parcel->paid_amount) > 0.01) {
-                $forbidden_changes[] = 'montant payé';
-            }
+        if (!file_exists($receipts_dir)) {
+            wp_mkdir_p($receipts_dir);
+        }
+        if (!file_exists($photos_dir)) {
+            wp_mkdir_p($photos_dir);
+        }
 
-            // Si des modifications interdites sont détectées
-            if (!empty($forbidden_changes)) {
-                $fields_list = implode(', ', $forbidden_changes);
-                echo '<div class="notice notice-error is-dismissible">';
-                echo '<p><strong>❌ MODIFICATION REFUSÉE</strong></p>';
-                echo '<p>En tant qu\'agent, vous ne pouvez pas modifier ces champs après validation admin :</p>';
-                echo '<ul style="margin-left: 20px;">';
-                foreach ($forbidden_changes as $field) {
-                    echo '<li>' . esc_html($field) . '</li>';
+        $receipt_photo_path = $current_parcel->receipt_photo; // Garder l'existant par défaut
+        $parcel_photos_paths = json_decode($current_parcel->photos, true); // Garder les existantes
+        if (!is_array($parcel_photos_paths)) {
+            $parcel_photos_paths = array();
+        }
+
+        // Upload du reçu (1 seul fichier, max 5MB) - remplace l'ancien
+        if (!empty($_FILES['receipt_photo']['name']) && $_FILES['receipt_photo']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['receipt_photo'];
+
+            // Vérifier la taille (max 5MB)
+            if ($file['size'] <= 5 * 1024 * 1024) {
+                $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $allowed_extensions = array('jpg', 'jpeg', 'png', 'gif', 'pdf');
+
+                if (in_array($file_extension, $allowed_extensions)) {
+                    // Supprimer l'ancien fichier si existe
+                    if ($current_parcel->receipt_photo && file_exists($receipts_dir . '/' . $current_parcel->receipt_photo)) {
+                        @unlink($receipts_dir . '/' . $current_parcel->receipt_photo);
+                    }
+
+                    $filename = 'receipt_' . time() . '_' . uniqid() . '.' . $file_extension;
+                    $destination = $receipts_dir . '/' . $filename;
+
+                    if (move_uploaded_file($file['tmp_name'], $destination)) {
+                        $receipt_photo_path = $filename;
+                    }
                 }
-                echo '</ul>';
-                echo '<p>Contactez un administrateur pour effectuer ces modifications.</p>';
-                echo '</div>';
-                return;
             }
+        }
 
-            // Forcer les valeurs d'origine pour les champs sensibles
-            $total_amount = $current_parcel->total_amount;
-            $paid_amount = $current_parcel->paid_amount;
-            $remaining_amount = $current_parcel->remaining_amount;
-            $_POST['unit_price'] = $current_parcel->unit_price;
-            $_POST['discount_value'] = $current_parcel->discount_value;
-            $_POST['payment_status'] = $current_parcel->payment_status;
+        // Upload des photos du colis (max 5 photos, max 2MB chacune) - ajoute aux existantes
+        if (!empty($_FILES['parcel_photos']['name'][0])) {
+            $files = $_FILES['parcel_photos'];
+            $file_count = count($files['name']);
+
+            // Limiter au total de 5 photos (existantes + nouvelles)
+            $remaining_slots = 5 - count($parcel_photos_paths);
+            $file_count = min($file_count, $remaining_slots);
+
+            for ($i = 0; $i < $file_count; $i++) {
+                if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                    // Vérifier la taille (max 2MB)
+                    if ($files['size'][$i] <= 2 * 1024 * 1024) {
+                        $file_extension = strtolower(pathinfo($files['name'][$i], PATHINFO_EXTENSION));
+                        $allowed_extensions = array('jpg', 'jpeg', 'png', 'gif', 'webp');
+
+                        if (in_array($file_extension, $allowed_extensions)) {
+                            $filename = 'photo_' . time() . '_' . uniqid() . '_' . $i . '.' . $file_extension;
+                            $destination = $photos_dir . '/' . $filename;
+
+                            if (move_uploaded_file($files['tmp_name'][$i], $destination)) {
+                                $parcel_photos_paths[] = $filename;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         $data = array(
             'client_id' => !empty($_POST['client_id']) ? intval($_POST['client_id']) : null,
+            'client_email' => !empty($_POST['client_email']) ? sanitize_email($_POST['client_email']) : null,
             'sender_name' => sanitize_text_field($_POST['sender_name']),
+            'sender_phone' => !empty($_POST['sender_phone']) ? sanitize_text_field($_POST['sender_phone']) : null,
+            'sender_id_card' => !empty($_POST['sender_id_card']) ? sanitize_text_field($_POST['sender_id_card']) : null,
             'recipient_name' => sanitize_text_field($_POST['recipient_name']),
             'recipient_phone' => sanitize_text_field($_POST['recipient_phone']),
             'recipient_address' => sanitize_textarea_field($_POST['recipient_address']),
@@ -1264,7 +1980,11 @@ class Colis224_Parcels {
             'paid_amount' => $paid_amount,
             'remaining_amount' => $remaining_amount,
             'driver_id' => !empty($_POST['driver_id']) ? intval($_POST['driver_id']) : null,
-            'notes' => sanitize_textarea_field($_POST['notes'])
+            'recorded_by_agent_id' => !empty($_POST['recorded_by_agent_id']) ? intval($_POST['recorded_by_agent_id']) : null,
+            'notes' => sanitize_textarea_field($_POST['notes']),
+            // Documents (v2.18.4)
+            'receipt_photo' => $receipt_photo_path,
+            'photos' => !empty($parcel_photos_paths) ? json_encode($parcel_photos_paths) : null
         );
 
         $result = $wpdb->update($table_parcels, $data, array('id' => $parcel_id));
@@ -1300,14 +2020,28 @@ class Colis224_Parcels {
      */
     private static function delete_parcel($parcel_id) {
         global $wpdb;
-        $table_parcels = $wpdb->prefix . 'colis224_parcels';
 
+        // Vérifier le rôle de l'utilisateur - seuls les administrateurs peuvent supprimer (v2.18.3)
+        $current_user = wp_get_current_user();
+        $is_admin = in_array('administrator', $current_user->roles) || current_user_can('manage_options');
+
+        if (!$is_admin) {
+            echo '<div class="notice notice-error is-dismissible" style="border-left-color: #dc3545;">';
+            echo '<p><strong>🚫 SUPPRESSION INTERDITE</strong></p>';
+            echo '<p style="font-size: 14px;">Seuls les <strong>administrateurs</strong> peuvent supprimer des colis.</p>';
+            echo '<p style="font-size: 13px; color: #666;">📌 <em>Cette restriction garantit l\'intégrité des données.</em></p>';
+            echo '<p style="font-size: 13px;">👉 Contactez un administrateur si vous devez supprimer ce colis.</p>';
+            echo '</div>';
+            return;
+        }
+
+        $table_parcels = $wpdb->prefix . 'colis224_parcels';
         $result = $wpdb->delete($table_parcels, array('id' => intval($parcel_id)));
 
         if ($result) {
-            echo '<div class="notice notice-success is-dismissible"><p>Colis supprimé avec succès!</p></div>';
+            echo '<div class="notice notice-success is-dismissible"><p>✅ Colis supprimé avec succès !</p></div>';
         } else {
-            echo '<div class="notice notice-error is-dismissible"><p>Erreur lors de la suppression du colis.</p></div>';
+            echo '<div class="notice notice-error is-dismissible"><p>❌ Erreur lors de la suppression du colis.</p></div>';
         }
     }
 }

@@ -1,0 +1,669 @@
+/**
+ * Colis224 Pricing Calculator Styles
+ * Design moderne pour les grilles tarifaires et calculateurs
+ *
+ * @since 2.19.0
+ */
+
+/* === PAGE PRINCIPALE === */
+.colis224-pricing-page {
+    background: #f0f2f5;
+    padding: 20px;
+}
+
+.colis224-page-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1e3a8a;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.colis224-page-title .dashicons {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+}
+
+.colis224-page-description {
+    font-size: 16px;
+    color: #64748b;
+    margin-bottom: 25px;
+}
+
+/* === ONGLETS === */
+.colis224-tab-wrapper {
+    background: white;
+    border-radius: 12px 12px 0 0;
+    padding: 0;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 0;
+}
+
+.colis224-tab-wrapper .nav-tab {
+    font-size: 16px;
+    font-weight: 600;
+    padding: 15px 30px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    border-radius: 12px 12px 0 0;
+    margin: 0;
+    transition: all 0.3s ease;
+}
+
+.colis224-tab-wrapper .nav-tab:hover {
+    background: rgba(37, 99, 235, 0.05);
+    color: #2563eb;
+}
+
+.colis224-tab-wrapper .nav-tab-active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* === CONTENU === */
+.colis224-tab-content {
+    background: white;
+    border-radius: 0 0 12px 12px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.colis224-pricing-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.colis224-pricing-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+@media (max-width: 1200px) {
+    .colis224-pricing-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* === CARTES === */
+.colis224-calculator-card,
+.colis224-rates-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.colis224-calculator-card:hover,
+.colis224-rates-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+/* === EN-TÊTES DE CARTES === */
+.calculator-header,
+.rates-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px 30px;
+    text-align: center;
+}
+
+.calculator-header-maritime,
+.rates-header-maritime {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+}
+
+.calculator-header-world,
+.rates-header-world {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.calculator-header h2,
+.rates-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+}
+
+.calculator-header p,
+.rates-header p {
+    margin: 8px 0 0;
+    font-size: 14px;
+    opacity: 0.95;
+    color: white;
+}
+
+/* === CORPS DES CARTES === */
+.calculator-body,
+.rates-body {
+    padding: 30px;
+}
+
+/* === FORMULAIRES === */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.form-group label .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #667eea;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    background: #f8fafc;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-control:disabled {
+    background: #e2e8f0;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.form-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    color: #64748b;
+    font-style: italic;
+}
+
+/* === DIMENSIONS GRID (CBM) === */
+.dimensions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    .dimensions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dimension-unit {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #667eea;
+}
+
+/* === BOUTONS === */
+.btn {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.btn-secondary {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.btn-secondary:hover {
+    background: #e2e8f0;
+}
+
+.btn-calculate {
+    width: 100%;
+    margin-top: 10px;
+    padding: 16px;
+    font-size: 16px;
+}
+
+/* === RÉSULTATS === */
+.calculator-result {
+    margin-top: 25px;
+}
+
+.result-success {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 2px solid #86efac;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.result-error {
+    background: #fef2f2;
+    border: 2px solid #fca5a5;
+    border-radius: 12px;
+    padding: 16px;
+    color: #dc2626;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+}
+
+.result-error .dashicons {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+}
+
+.result-header {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 16px 20px;
+    text-align: center;
+}
+
+.result-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.result-body {
+    padding: 20px;
+}
+
+.result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.result-row:last-child {
+    border-bottom: none;
+}
+
+.result-label {
+    font-weight: 600;
+    color: #475569;
+    font-size: 14px;
+}
+
+.result-value {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 15px;
+}
+
+.result-highlight {
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 8px 0;
+}
+
+.result-divider {
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, #10b981 50%, transparent 100%);
+    margin: 16px 0;
+}
+
+.result-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.total-label {
+    font-size: 18px;
+    font-weight: 700;
+    color: #475569;
+}
+
+.total-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: #10b981;
+}
+
+.result-note {
+    text-align: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed #d1d5db;
+}
+
+.result-note small {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+.result-actions {
+    padding: 16px 20px;
+    background: white;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.loading {
+    text-align: center;
+    padding: 30px;
+    color: #667eea;
+    font-weight: 600;
+}
+
+/* === TABLEAUX === */
+.colis224-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.colis224-table thead {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.colis224-table th {
+    padding: 14px 16px;
+    font-weight: 700;
+    color: #1e293b;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.colis224-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #475569;
+}
+
+.colis224-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.colis224-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.price-value {
+    color: #10b981;
+    font-size: 16px;
+}
+
+.text-muted {
+    color: #94a3b8;
+}
+
+/* === BADGES === */
+.badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.badge-info {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+/* === BOÎTES D'INFORMATION === */
+.info-box {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    border: 2px solid #e2e8f0;
+}
+
+.info-box h3 {
+    margin: 0 0 12px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.info-box p {
+    margin: 8px 0;
+    color: #475569;
+    line-height: 1.6;
+}
+
+.info-box ul {
+    margin: 10px 0;
+    color: #475569;
+}
+
+.info-box code {
+    display: block;
+    background: #f1f5f9;
+    padding: 12px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    margin: 10px 0;
+    border-left: 3px solid #667eea;
+}
+
+.info-box-primary {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+}
+
+.info-box-info {
+    border-color: #06b6d4;
+    background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+}
+
+.info-box-warning {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+}
+
+.info-box-success {
+    border-color: #10b981;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+/* === AFFICHAGE PRIX === */
+.price-display {
+    text-align: center;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    margin: 16px 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.price-amount {
+    display: block;
+    font-size: 36px;
+    font-weight: 800;
+    color: #667eea;
+    margin-bottom: 4px;
+}
+
+.price-currency {
+    font-size: 20px;
+    font-weight: 700;
+    color: #475569;
+    margin-left: 4px;
+}
+
+.price-unit {
+    display: block;
+    font-size: 14px;
+    color: #64748b;
+    margin-top: 8px;
+}
+
+/* === GRILLE DE PAYS === */
+.countries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+}
+
+.country-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.country-card:hover {
+    border-color: #10b981;
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.2);
+}
+
+.country-flag {
+    font-size: 48px;
+    margin-bottom: 8px;
+}
+
+.country-name {
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.country-currency {
+    font-size: 12px;
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.country-modes {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+/* === ANIMATIONS === */
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.calculator-result,
+.result-success,
+.result-error {
+    animation: slideInDown 0.4s ease;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .colis224-page-title {
+        font-size: 24px;
+    }
+
+    .colis224-tab-wrapper .nav-tab {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    .calculator-header h2,
+    .rates-header h2 {
+        font-size: 20px;
+    }
+
+    .calculator-body,
+    .rates-body {
+        padding: 20px;
+    }
+
+    .result-actions {
+        flex-direction: column;
+    }
+
+    .result-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .countries-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+
+    .total-value {
+        font-size: 22px;
+    }
+}

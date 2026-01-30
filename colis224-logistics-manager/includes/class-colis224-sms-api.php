@@ -43,6 +43,11 @@ class Colis224_SMS_API {
                 'client_secret' => get_option('colis224_orange_sms_client_secret', ''),
                 'sender_name' => get_option('colis224_orange_sms_sender', 'Colis224'),
             ),
+            'nimbasms' => array(
+                'sid' => get_option('colis224_nimbasms_sid', '48782ece605fcd66fc15da242cc0142c'),
+                'auth_token' => get_option('colis224_nimbasms_token', 'Basic NDg3ODJlY2U2MDVmY2Q2NmZjMTVkYTI0MmNjMDE0MmM6elhMZGIySU4xVVh2eE5KZWdyakJkX0VGMlE2XzRtemFGM2FFTlE1NW94ZmYyS0lWX1lMNi1KdnE1TUNaRGV0Vm9wc1JVaXYyNkdIUkhpYWVPbmdMU2xnQnNPOS1YNXE0dWkxS1BEUFFOMjQ='),
+                'from' => get_option('colis224_nimbasms_from', 'Colis224'),
+            ),
             'custom' => array(
                 'api_url' => get_option('colis224_custom_sms_api_url', ''),
                 'api_key' => get_option('colis224_custom_sms_api_key', ''),
@@ -67,6 +72,14 @@ class Colis224_SMS_API {
             return array('success' => false, 'message' => 'Numéro de téléphone invalide');
         }
 
+        // Vérifier si le provider est activé
+        if ($this->provider === 'none' || empty($this->provider)) {
+            return array(
+                'success' => false,
+                'message' => 'SMS désactivé - Veuillez activer un fournisseur SMS dans les paramètres'
+            );
+        }
+
         // Envoyer selon le provider
         switch ($this->provider) {
             case 'twilio':
@@ -81,12 +94,16 @@ class Colis224_SMS_API {
                 $result = $this->send_via_orange($to, $message);
                 break;
 
+            case 'nimbasms':
+                $result = $this->send_via_nimbasms($to, $message);
+                break;
+
             case 'custom':
                 $result = $this->send_via_custom_api($to, $message);
                 break;
 
             default:
-                $result = array('success' => false, 'message' => 'Provider inconnu');
+                $result = array('success' => false, 'message' => 'Fournisseur SMS non configuré');
         }
 
         // Logger le SMS
@@ -214,6 +231,92 @@ class Colis224_SMS_API {
         }
 
         return array('success' => false, 'message' => 'Erreur Orange SMS');
+    }
+
+    /**
+     * Envoyer via NimbaSMS
+     */
+    private function send_via_nimbasms($to, $message) {
+        $settings = $this->settings['nimbasms'];
+
+        // Vérifier les identifiants
+        if (empty($settings['sid'])) {
+            return array('success' => false, 'message' => 'Service ID NimbaSMS manquant - Vérifiez les paramètres');
+        }
+
+        if (empty($settings['auth_token'])) {
+            return array('success' => false, 'message' => 'Token d\'autorisation NimbaSMS manquant - Vérifiez les paramètres');
+        }
+
+        // Formater le numéro pour Guinée (+224)
+        $to = $this->format_phone_number($to);
+        if (!$to) {
+            return array('success' => false, 'message' => 'Numéro de téléphone invalide: doit être au format +224XXXXXXXXX');
+        }
+
+        $api_url = 'https://api.nimbasms.com/v1/messages';
+
+        $data = array(
+            'to' => $to,
+            'message' => $message,
+            'from' => !empty($settings['from']) ? $settings['from'] : 'Colis224'
+        );
+
+        $args = array(
+            'method' => 'POST',
+            'headers' => array(
+                'Authorization' => $settings['auth_token'],
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json'
+            ),
+            'body' => json_encode($data),
+            'timeout' => 30,
+            'sslverify' => true
+        );
+
+        $response = wp_remote_post($api_url, $args);
+
+        if (is_wp_error($response)) {
+            return array(
+                'success' => false,
+                'message' => 'Connexion NimbaSMS échouée: ' . $response->get_error_message()
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        $decoded_body = json_decode($body, true);
+
+        // Vérifier le code de statut (NimbaSMS utilise 200, 201 pour succès)
+        if ($status_code >= 200 && $status_code < 300) {
+            return array(
+                'success' => true,
+                'message' => 'SMS envoyé avec succès via NimbaSMS',
+                'message_id' => isset($decoded_body['id']) ? $decoded_body['id'] : null
+            );
+        } else {
+            // Message d'erreur détaillé
+            $error_message = 'Erreur NimbaSMS';
+
+            if (isset($decoded_body['message'])) {
+                $error_message = $decoded_body['message'];
+            } elseif (isset($decoded_body['error'])) {
+                $error_message = $decoded_body['error'];
+            } elseif ($status_code == 401) {
+                $error_message = 'Authentification NimbaSMS échouée - Vérifiez votre Token';
+            } elseif ($status_code == 403) {
+                $error_message = 'Accès refusé par NimbaSMS - Vérifiez votre Service ID';
+            } elseif ($status_code == 400) {
+                $error_message = 'Requête invalide - Vérifiez le numéro et le message';
+            }
+
+            return array(
+                'success' => false,
+                'message' => $error_message . ' (Code: ' . $status_code . ')',
+                'status_code' => $status_code,
+                'response_body' => $body
+            );
+        }
     }
 
     /**

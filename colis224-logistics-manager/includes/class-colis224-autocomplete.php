@@ -36,13 +36,15 @@ class Colis224_Autocomplete {
         $table_clients = $wpdb->prefix . 'colis224_clients';
 
         // Recherche dans nom, email, téléphone et company_name
+        // Afficher uniquement les clients validés pour éviter la confusion
         $results = $wpdb->get_results($wpdb->prepare("
             SELECT id, name, phone, email, company_name
             FROM $table_clients
-            WHERE name LIKE %s
+            WHERE (name LIKE %s
                OR phone LIKE %s
                OR email LIKE %s
-               OR company_name LIKE %s
+               OR company_name LIKE %s)
+               AND (validation_status = 'validated' OR validation_status IS NULL)
             ORDER BY name ASC
             LIMIT 20
         ",

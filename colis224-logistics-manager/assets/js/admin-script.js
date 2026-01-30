@@ -40,22 +40,26 @@
         // === CALCUL AUTOMATIQUE DU TOTAL (COLIS) ===
         function calculateParcelTotal() {
             var unitPrice = parseFloat($('#unit_price').val()) || 0;
+            var weight = parseFloat($('#weight').val()) || 0;
             var discountType = $('#discount_type').val();
             var discountValue = parseFloat($('#discount_value').val()) || 0;
-            var total = unitPrice;
+
+            // v2.18.29: Calcul correct = Prix unitaire × Poids
+            var subtotal = unitPrice * weight;
+            var total = subtotal;
 
             if (discountType === 'percentage') {
-                total = unitPrice - (unitPrice * discountValue / 100);
+                total = subtotal - (subtotal * discountValue / 100);
             } else {
-                total = unitPrice - discountValue;
+                total = subtotal - discountValue;
             }
 
             total = Math.max(0, total);
             $('#total_amount').val(total.toFixed(2));
         }
 
-        // Déclencher le calcul lors de la modification des champs
-        $('#unit_price, #discount_type, #discount_value').on('input change', calculateParcelTotal);
+        // Déclencher le calcul lors de la modification des champs (incluant le poids)
+        $('#unit_price, #weight, #discount_type, #discount_value').on('input change', calculateParcelTotal);
 
         // === GÉNÉRATION AUTOMATIQUE DU NUMÉRO DE SUIVI ===
         $('#recipient_phone').on('blur', function() {

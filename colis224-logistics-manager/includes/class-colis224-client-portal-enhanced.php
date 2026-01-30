@@ -60,10 +60,44 @@ class Colis224_Client_Portal_Enhanced {
     }
 
     /**
+     * Helper: Vérifier l'authentification du client pour les requêtes AJAX
+     * @return int|false ID du client si connecté, false sinon
+     */
+    private function verify_client_ajax_auth() {
+        // Vérifier si le client est connecté via WordPress
+        if (!Colis224_WP_User_Sync::is_client_logged_in()) {
+            return false;
+        }
+
+        // Récupérer l'ID du client
+        $client_id = Colis224_WP_User_Sync::get_current_client_id();
+
+        if (!$client_id) {
+            return false;
+        }
+
+        return $client_id;
+    }
+
+    /**
      * Afficher l'espace client amélioré dans le shortcode
      */
     public static function render_enhanced_portal($client_id) {
         global $wpdb;
+
+        // CRITIQUE: S'assurer que jQuery est chargé pour le JavaScript inline
+        if (!wp_script_is('jquery', 'enqueued')) {
+            wp_enqueue_script('jquery');
+        }
+
+        // SÉCURITÉ: Vérifier les permissions de manière défensive
+        // Vérifie si l'utilisateur peut créer des colis/clients (admins, agents, éditeurs, auteurs)
+        $can_create_items = false;
+        if (function_exists('is_user_logged_in') && function_exists('current_user_can')) {
+            if (is_user_logged_in()) {
+                $can_create_items = current_user_can('colis224_create_parcel') || current_user_can('manage_options');
+            }
+        }
 
         $client = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}colis224_clients WHERE id = %d",
@@ -76,9 +110,9 @@ class Colis224_Client_Portal_Enhanced {
 
         // Récupérer les colis du client
         $parcels = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}colis224_parcels 
-            WHERE client_id = %d 
-            ORDER BY created_at DESC 
+            "SELECT * FROM {$wpdb->prefix}colis224_parcels
+            WHERE client_id = %d
+            ORDER BY created_at DESC
             LIMIT 20",
             $client_id
         ));
@@ -122,7 +156,20 @@ class Colis224_Client_Portal_Enhanced {
                     </button>
                     
                     <!-- Déconnexion -->
-                    <a href="<?php echo wp_nonce_url('?action=colis224_logout', 'colis224_logout'); ?>" class="btn-logout">
+                    <?php
+                    // Obtenir l'URL de déconnexion avec redirection vers page de connexion
+                    // Compatible WPS Hide Login
+                    $logout_redirect = get_permalink();
+
+                    // Si WPS Hide Login est actif, rediriger vers la page de connexion personnalisée
+                    if (function_exists('wps_hide_login_get_page')) {
+                        $custom_login_slug = get_option('whl_page', 'login');
+                        if ($custom_login_slug) {
+                            $logout_redirect = home_url($custom_login_slug);
+                        }
+                    }
+                    ?>
+                    <a href="<?php echo wp_logout_url($logout_redirect); ?>" class="btn-logout">
                         <span class="dashicons dashicons-exit"></span> Déconnexion
                     </a>
                 </div>
@@ -182,14 +229,30 @@ class Colis224_Client_Portal_Enhanced {
             </div>
             <?php endif; ?>
 
+            <!-- Prochains Départs -->
+            <?php echo self::render_upcoming_departures(); ?>
+
             <!-- Onglets Navigation -->
             <div class="portal-tabs">
                 <button class="tab-btn active" data-tab="parcels">
                     <span class="dashicons dashicons-archive"></span> Mes Colis
                 </button>
+                <?php
+                // Onglet "Ajouter" réservé aux admins, agents, éditeurs et auteurs UNIQUEMENT
+                if ($can_create_items):
+                ?>
                 <button class="tab-btn" data-tab="add">
                     <span class="dashicons dashicons-plus-alt"></span> Ajouter
                 </button>
+                <?php endif; ?>
+                <?php
+                // Onglet "Tarif" visible pour les agents, admins et éditeurs
+                if ($can_create_items):
+                ?>
+                <button class="tab-btn" data-tab="tarif">
+                    <span class="dashicons dashicons-money-alt"></span> Tarif
+                </button>
+                <?php endif; ?>
                 <button class="tab-btn" data-tab="tickets">
                     <span class="dashicons dashicons-tickets-alt"></span> Support (<?php echo count($tickets); ?>)
                 </button>
@@ -237,7 +300,8 @@ class Colis224_Client_Portal_Enhanced {
                     <?php endif; ?>
                 </div>
 
-                <!-- ONGLET: Ajouter -->
+                <!-- ONGLET: Ajouter (Réservé aux admins/agents uniquement) -->
+                <?php if ($can_create_items): ?>
                 <div class="tab-content" id="tab-add">
                     <div class="add-actions-tabs">
                         <button class="sub-tab-btn active" data-subtab="add-parcel">
@@ -418,6 +482,69 @@ class Colis224_Client_Portal_Enhanced {
                         </form>
                     </div>
                 </div>
+                <?php endif; // Fin condition permissions Ajouter ?>
+
+                <!-- ONGLET: Tarif (Réservé aux admins/agents uniquement) -->
+                <?php if ($can_create_items): ?>
+                <div class="tab-content" id="tab-tarif">
+                    <h3>💰 Calculateur de Tarifs Colis224</h3>
+                    <p class="subtitle" style="margin-bottom: 24px;">Obtenez vos tarifs et shipping marks en quelques clics</p>
+
+                    <?php
+                    // Charger le calculateur frontend
+                    if (class_exists('Colis224_Frontend_Calculator')) {
+                        // Forcer l'enqueue des scripts du calculateur
+                        wp_enqueue_style(
+                            'colis224-frontend-calculator',
+                            COLIS224_PLUGIN_URL . 'assets/css/frontend-calculator.css',
+                            array(),
+                            COLIS224_VERSION
+                        );
+
+                        wp_enqueue_script(
+                            'colis224-frontend-calculator',
+                            COLIS224_PLUGIN_URL . 'assets/js/frontend-calculator.js',
+                            array('jquery'),
+                            COLIS224_VERSION . '.' . time(),
+                            true
+                        );
+
+                        // Localize script avec les données nécessaires
+                        wp_localize_script('colis224-frontend-calculator', 'colis224Frontend', array(
+                            'ajax_url' => admin_url('admin-ajax.php'),
+                            'nonce' => wp_create_nonce('colis224_frontend_nonce'),
+                            'warehouse_phone_china' => '+8618719472926',
+                            'warehouse_phone_guinea' => '+224620178930',
+                            'agencies' => array(
+                                array('name' => 'Agence 1', 'phone' => '+224620178930'),
+                                array('name' => 'Agence 2 Lambanyi', 'phone' => '+224626526737'),
+                                array('name' => 'Agence 3', 'phone' => '+224626526735'),
+                                array('name' => 'Bureau France', 'phone' => '+33698485752'),
+                                array('name' => 'Agence USA', 'phone' => '+17185822079'),
+                            ),
+                            'orange_money_code' => '#144*6*649048*100000*code secret#OK',
+                            'orange_money_merchant' => 'COLIS224',
+                            'orange_money_qr' => 'https://colis224.com/wp-content/uploads/2026/01/compte-marchand-orange-money-colis224.jpg',
+                            'wechat_qr' => 'https://colis224.com/wp-content/uploads/2026/01/Compte-Wechat.jpg',
+                            'images' => array(
+                                'sea_cargo' => 'https://colis224.com/wp-content/uploads/2026/01/adresse-bateau.jpeg',
+                                'air_plane' => 'https://colis224.com/wp-content/uploads/2026/01/adrsse-avion.jpeg',
+                                'air_cargo_mark' => 'https://colis224.com/wp-content/uploads/2026/01/Process-avion.jpg',
+                                'sea_cargo_mark' => 'https://colis224.com/wp-content/uploads/2026/01/process-bateau.jpg',
+                            )
+                        ));
+
+                        // Afficher le calculateur
+                        echo do_shortcode('[colis224_calculator]');
+                    } else {
+                        echo '<div class="empty-state">';
+                        echo '<span class="dashicons dashicons-warning"></span>';
+                        echo '<p>Le calculateur de tarifs n\'est pas disponible pour le moment.</p>';
+                        echo '</div>';
+                    }
+                    ?>
+                </div>
+                <?php endif; // Fin condition permissions Tarif ?>
 
                 <!-- ONGLET: Support / Tickets -->
                 <div class="tab-content" id="tab-tickets">
@@ -1324,10 +1451,19 @@ class Colis224_Client_Portal_Enhanced {
             gap: 20px;
         }
 
-        /* Recherche de clients */
+        /* Recherche de clients (amélioration v2.18.21) */
         .search-results {
             position: relative;
             margin-top: 10px;
+        }
+
+        .client-search-header {
+            padding: 10px 15px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px 8px 0 0;
+            font-weight: bold;
+            font-size: 13px;
         }
 
         .client-search-list {
@@ -1336,60 +1472,303 @@ class Colis224_Client_Portal_Enhanced {
             margin: 0;
             background: white;
             border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            max-height: 200px;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 300px;
             overflow-y: auto;
         }
 
         .client-search-list li {
-            padding: 12px 15px;
+            padding: 15px;
             cursor: pointer;
             border-bottom: 1px solid #f0f0f0;
-            transition: background 0.2s;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .client-search-list li:hover {
-            background: #f8f9fa;
+            background: #f0f4ff;
+            transform: translateX(5px);
+            border-left: 3px solid #667eea;
         }
 
         .client-search-list li:last-child {
             border-bottom: none;
         }
 
-        .no-results {
-            padding: 15px;
-            text-align: center;
-            color: #999;
-            margin: 0;
+        .client-search-list li.selected-client {
+            background: #e8f5e9;
+            border-left: 3px solid #4caf50;
         }
 
-        /* Responsive */
+        .client-info {
+            flex: 1;
+        }
+
+        .client-info strong {
+            display: block;
+            color: #333;
+            font-size: 15px;
+            margin-bottom: 5px;
+        }
+
+        .client-details {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .client-details span {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .select-btn {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+
+        .client-search-list li:hover .select-btn {
+            background: #5568d3;
+            transform: scale(1.05);
+        }
+
+        .no-results, .searching-clients, .search-error {
+            padding: 20px;
+            text-align: center;
+            margin: 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .no-results {
+            color: #999;
+            background: #f9f9f9;
+        }
+
+        .searching-clients {
+            color: #667eea;
+            background: #f0f4ff;
+            border-color: #667eea;
+        }
+
+        .search-error {
+            color: #d32f2f;
+            background: #ffebee;
+            border-color: #d32f2f;
+        }
+
+        .rotating {
+            animation: rotate 1s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Mobile */
         @media (max-width: 768px) {
+            /* En-tête */
             .colis224-portal-header-enhanced {
                 flex-direction: column;
-                gap: 20px;
+                gap: 15px;
+                padding: 15px;
             }
 
-            .parcels-grid {
-                grid-template-columns: 1fr;
+            .portal-welcome h2 {
+                font-size: 20px;
             }
 
-            .chat-widget {
-                width: calc(100% - 40px);
-                right: 20px;
+            .portal-header-actions {
+                flex-wrap: wrap;
+                gap: 10px;
+                width: 100%;
+                justify-content: center;
             }
 
+            .btn-logout {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+
+            /* Onglets */
             .portal-tabs {
                 overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                gap: 5px;
+                padding: 0 10px;
             }
 
+            .tab-btn {
+                padding: 10px 15px;
+                font-size: 13px;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+
+            /* Grille des colis */
+            .parcels-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .parcel-card {
+                padding: 15px;
+            }
+
+            /* Fidélité */
+            .loyalty-card-enhanced {
+                padding: 15px;
+            }
+
+            .loyalty-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .loyalty-stat {
+                flex: 1;
+                min-width: unset;
+            }
+
+            /* Formulaires */
             .form-row {
                 grid-template-columns: 1fr;
             }
 
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                font-size: 16px; /* Évite le zoom sur iOS */
+            }
+
+            /* Tickets */
+            .ticket-item {
+                padding: 15px;
+            }
+
+            .ticket-subject {
+                font-size: 16px;
+            }
+
+            /* Onglets d'ajout */
             .add-actions-tabs {
                 overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                gap: 5px;
+            }
+
+            .add-tab-btn {
+                padding: 8px 15px;
+                font-size: 13px;
+                white-space: nowrap;
+            }
+
+            /* Chat widget */
+            .chat-widget {
+                width: calc(100% - 20px);
+                right: 10px;
+                bottom: 10px;
+                max-height: 80vh;
+            }
+
+            .chat-header {
+                padding: 12px;
+            }
+
+            .chat-messages {
+                max-height: 50vh;
+            }
+
+            /* Modales */
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+
+            .modal-header h3 {
+                font-size: 18px;
+            }
+
+            /* Statistiques */
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            /* Badges */
+            .status-badge,
+            .parcel-status {
+                font-size: 11px;
+                padding: 4px 10px;
+            }
+
+            /* Boutons */
+            .btn-primary,
+            .btn-secondary {
+                width: 100%;
+                padding: 12px;
+                font-size: 14px;
+            }
+
+            .btn-view-details,
+            .btn-view-ticket {
+                padding: 10px;
+                font-size: 14px;
+            }
+        }
+
+        /* Très petits écrans */
+        @media (max-width: 480px) {
+            .colis224-enhanced-portal {
+                padding: 10px;
+            }
+
+            .portal-welcome h2 {
+                font-size: 18px;
+            }
+
+            .client-phone {
+                font-size: 13px;
+            }
+
+            .tab-btn {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .parcel-card {
+                padding: 12px;
+            }
+
+            .tracking-number {
+                font-size: 14px;
+            }
+
+            .loyalty-card-enhanced {
+                padding: 12px;
+            }
+
+            .modal-content {
+                width: 98%;
+                margin: 1% auto;
+            }
+
+            .chat-widget {
+                width: calc(100% - 10px);
+                right: 5px;
+                bottom: 5px;
             }
         }
         </style>
@@ -1417,16 +1796,41 @@ class Colis224_Client_Portal_Enhanced {
                 $('#subtab-' + subtab).addClass('active');
             });
 
-            // Recherche de clients
+            // Recherche de clients (amélioration v2.18.21, v2.18.24: ultra-optimisée)
             var searchTimeout;
+            var clientSearchCache = {}; // Cache local JavaScript pour résultats instantanés
+
+            // Charger le cache depuis localStorage
+            try {
+                var storedCache = localStorage.getItem('colis224_client_cache');
+                if (storedCache) {
+                    var parsed = JSON.parse(storedCache);
+                    // Vérifier si le cache n'est pas expiré (5 minutes)
+                    if (parsed.timestamp && (Date.now() - parsed.timestamp) < 300000) {
+                        clientSearchCache = parsed.data;
+                    }
+                }
+            } catch(e) {}
+
             $('#client-search-input').on('input', function() {
                 var searchTerm = $(this).val().trim();
                 clearTimeout(searchTimeout);
-                
+
                 if (searchTerm.length < 2) {
                     $('#client-search-results').empty();
+                    $('#selected-client-id').val('');
                     return;
                 }
+
+                // v2.18.24: Vérifier d'abord le cache local (instantané !)
+                if (clientSearchCache[searchTerm]) {
+                    var cachedData = clientSearchCache[searchTerm];
+                    displaySearchResults(cachedData, searchTerm);
+                    return;
+                }
+
+                // Afficher indicateur de chargement
+                $('#client-search-results').html('<p class="searching-clients"><span class="dashicons dashicons-update-alt rotating"></span> Recherche...</p>');
 
                 searchTimeout = setTimeout(function() {
                     $.ajax({
@@ -1438,31 +1842,78 @@ class Colis224_Client_Portal_Enhanced {
                             nonce: '<?php echo wp_create_nonce('colis224_client_portal'); ?>'
                         },
                         success: function(response) {
-                            if (response.success && response.data && response.data.length > 0) {
-                                var html = '<ul class="client-search-list">';
-                                response.data.forEach(function(client) {
-                                    html += '<li data-client-id="' + client.id + '">';
-                                    html += '<strong>' + client.name + '</strong> - ' + client.phone;
-                                    if (client.email) html += ' (' + client.email + ')';
-                                    html += '</li>';
-                                });
-                                html += '</ul>';
-                                $('#client-search-results').html(html);
-                            } else {
-                                $('#client-search-results').html('<p class="no-results">Aucun client trouvé</p>');
+                            if (response.success && response.data) {
+                                // Sauvegarder dans le cache local
+                                clientSearchCache[searchTerm] = response.data;
+
+                                // Sauvegarder dans localStorage
+                                try {
+                                    localStorage.setItem('colis224_client_cache', JSON.stringify({
+                                        timestamp: Date.now(),
+                                        data: clientSearchCache
+                                    }));
+                                } catch(e) {}
+
+                                displaySearchResults(response.data, searchTerm);
                             }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Erreur recherche clients:', error);
+                            $('#client-search-results').html('<p class="search-error">⚠️ Erreur de connexion. Réessayez.</p>');
                         }
                     });
-                }, 300);
+                }, 50); // v2.18.24: Réduit à 50ms (était 400ms puis 150ms) - 88% plus rapide !
             });
 
-            // Sélection d'un client depuis les résultats
+            // Fonction pour afficher les résultats de recherche
+            function displaySearchResults(data, searchTerm) {
+                if (data && data.length > 0) {
+                    var html = '<div class="client-search-header">📋 ' + data.length + ' client(s) trouvé(s)</div>';
+                    html += '<ul class="client-search-list">';
+                    data.forEach(function(client) {
+                        html += '<li data-client-id="' + client.id + '" data-client-name="' + client.name + '" data-client-phone="' + client.phone + '">';
+                        html += '<div class="client-info">';
+                        html += '<strong>👤 ' + client.name + '</strong>';
+                        html += '<div class="client-details">';
+                        html += '<span>📞 ' + client.phone + '</span>';
+                        if (client.email) html += '<span>✉️ ' + client.email + '</span>';
+                        html += '</div>';
+                        html += '</div>';
+                        html += '<span class="select-btn">Sélectionner ➜</span>';
+                        html += '</li>';
+                    });
+                    html += '</ul>';
+                    $('#client-search-results').html(html);
+                } else {
+                    $('#client-search-results').html('<p class="no-results">❌ Aucun client trouvé pour "' + searchTerm + '"</p>');
+                }
+            }
+
+            // Sélection d'un client depuis les résultats (amélioration v2.18.21)
             $(document).on('click', '.client-search-list li', function() {
                 var clientId = $(this).data('client-id');
-                var clientName = $(this).find('strong').text();
+                var clientName = $(this).data('client-name');
+                var clientPhone = $(this).data('client-phone');
+
+                // Remplir les champs
                 $('#selected-client-id').val(clientId);
-                $('#client-search-input').val(clientName);
+                $('#client-search-input').val('✅ ' + clientName + ' (' + clientPhone + ')');
+                $('#client-search-input').css('background-color', '#e8f5e9');
+
+                // Vider les résultats
                 $('#client-search-results').empty();
+
+                // Feedback visuel
+                $(this).addClass('selected-client');
+            });
+
+            // Réinitialiser la sélection quand on modifie le champ
+            $('#client-search-input').on('focus', function() {
+                if ($('#selected-client-id').val()) {
+                    $(this).val('');
+                    $(this).css('background-color', '');
+                    $('#selected-client-id').val('');
+                }
             });
 
             // Soumission formulaire ajouter colis
@@ -1667,7 +2118,14 @@ class Colis224_Client_Portal_Enhanced {
                     success: function(response) {
                         if (response.success) {
                             $('#parcel-details-content').html(response.data.html);
+                        } else {
+                            var errorMsg = response.data && response.data.message ? response.data.message : 'Erreur inconnue';
+                            $('#parcel-details-content').html('<div class="error-message" style="padding: 20px; text-align: center; color: #e74c3c;"><strong>❌ Erreur:</strong> ' + errorMsg + '</div>');
                         }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', status, error, xhr.responseText);
+                        $('#parcel-details-content').html('<div class="error-message" style="padding: 20px; text-align: center; color: #e74c3c;"><strong>❌ Erreur de connexion</strong><br>Veuillez réessayer ou contacter le support.</div>');
                     }
                 });
             }
@@ -1687,18 +2145,18 @@ class Colis224_Client_Portal_Enhanced {
                     success: function(response) {
                         if (response.success) {
                             $('#ticket-conversation-content').html(response.data.html);
-                            
+
                             // Attacher le gestionnaire au bouton de réponse
                             $(document).on('click', '#btn-reply-ticket', function(e) {
                                 e.preventDefault();
                                 var ticketId = $(this).data('ticket-id');
                                 var message = $('#ticket-reply-message').val().trim();
-                                
+
                                 if (!message) {
                                     alert('❌ Veuillez écrire un message');
                                     return;
                                 }
-                                
+
                                 $.ajax({
                                     url: '<?php echo admin_url('admin-ajax.php'); ?>',
                                     type: 'POST',
@@ -1721,7 +2179,14 @@ class Colis224_Client_Portal_Enhanced {
                                     }
                                 });
                             });
+                        } else {
+                            var errorMsg = response.data && response.data.message ? response.data.message : 'Erreur inconnue';
+                            $('#ticket-conversation-content').html('<div class="error-message" style="padding: 20px; text-align: center; color: #e74c3c;"><strong>❌ Erreur:</strong> ' + errorMsg + '</div>');
                         }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', status, error, xhr.responseText);
+                        $('#ticket-conversation-content').html('<div class="error-message" style="padding: 20px; text-align: center; color: #e74c3c;"><strong>❌ Erreur de connexion</strong><br>Veuillez réessayer ou contacter le support.</div>');
                     }
                 });
             }
@@ -1783,6 +2248,89 @@ class Colis224_Client_Portal_Enhanced {
             }, 30000);
         });
         </script>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Afficher les prochains départs
+     */
+    private static function render_upcoming_departures() {
+        // Charger la classe Departures si nécessaire
+        if (!class_exists('Colis224_Departures')) {
+            return '';
+        }
+
+        global $wpdb;
+
+        // Récupérer les prochains départs (limités à 5)
+        $table_departures = $wpdb->prefix . 'colis224_departures';
+        $departures = $wpdb->get_results(
+            "SELECT * FROM {$table_departures}
+            WHERE departure_date >= CURDATE()
+            AND status = 'scheduled'
+            ORDER BY departure_date ASC
+            LIMIT 5"
+        );
+
+        if (empty($departures)) {
+            return '';
+        }
+
+        ob_start();
+        ?>
+        <div class="colis224-departures-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 20px; margin: 20px 0; color: white;">
+            <h3 style="margin: 0 0 15px 0; color: white; display: flex; align-items: center; gap: 10px;">
+                <span class="dashicons dashicons-airplane" style="font-size: 24px;"></span>
+                ✈️ Prochains Départs
+            </h3>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+                <?php foreach ($departures as $dep):
+                    $transport_icon = $dep->transport_type === 'plane' ? '✈️' : '🚢';
+                    $departure_datetime = new DateTime($dep->departure_date);
+                    $formatted_date = $departure_datetime->format('d/m/Y');
+                    $days_until = floor((strtotime($dep->departure_date) - time()) / (60 * 60 * 24));
+
+                    $whatsapp_message = urlencode("Bonjour, je souhaite réserver pour le départ:\n📍 {$dep->departure_city} → {$dep->arrival_city}\n📅 {$formatted_date}\n{$transport_icon} Transport");
+                    $whatsapp_url = "https://wa.me/{$dep->whatsapp_number}?text={$whatsapp_message}";
+                ?>
+                <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 10px; padding: 15px; border: 1px solid rgba(255,255,255,0.2);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 28px;"><?php echo $transport_icon; ?></span>
+                        <span style="background: rgba(255,255,255,0.3); padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+                            <?php echo $days_until === 0 ? "Aujourd'hui" : ($days_until === 1 ? "Demain" : "Dans {$days_until} jours"); ?>
+                        </span>
+                    </div>
+
+                    <div style="font-size: 14px; margin-bottom: 8px;">
+                        📅 <strong><?php echo esc_html($formatted_date); ?></strong>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 16px;">
+                        <strong><?php echo esc_html($dep->departure_city); ?></strong>
+                        <span>→</span>
+                        <strong><?php echo esc_html($dep->arrival_city); ?></strong>
+                    </div>
+
+                    <?php if ($dep->price_estimate && $dep->price_estimate > 0): ?>
+                    <div style="margin-bottom: 10px; font-size: 14px; opacity: 0.9;">
+                        💰 À partir de <strong><?php echo number_format($dep->price_estimate, 0, ',', ' ') . ' ' . esc_html($dep->currency); ?></strong>
+                    </div>
+                    <?php endif; ?>
+
+                    <a href="<?php echo esc_url($whatsapp_url); ?>" target="_blank"
+                       style="display: inline-block; background: #25D366; color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; width: 100%; text-align: center; margin-top: 5px;">
+                        📱 Réserver sur WhatsApp
+                    </a>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <p style="margin: 15px 0 0 0; font-size: 13px; opacity: 0.8; text-align: center;">
+                💡 Cliquez sur "Réserver" pour contacter notre équipe via WhatsApp
+            </p>
+        </div>
         <?php
         return ob_get_clean();
     }
@@ -1894,19 +2442,16 @@ class Colis224_Client_Portal_Enhanced {
      * AJAX: Créer un ticket côté client
      */
     public function ajax_create_ticket() {
-        // Démarrer la session si nécessaire
-        if (!session_id()) {
-            session_start();
-        }
-        
-        // Vérifier le nonce proprement (sans tuer le script)
+        // Vérifier le nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_client_portal')) {
             wp_send_json_error(array('message' => 'Nonce invalide'));
             return;
         }
 
-        if (!isset($_SESSION['colis224_client_id'])) {
-            wp_send_json_error(array('message' => 'Non connecté'));
+        // Vérifier l'authentification WordPress
+        $client_id = $this->verify_client_ajax_auth();
+        if (!$client_id) {
+            wp_send_json_error(array('message' => 'Non connecté. Veuillez vous reconnecter.'));
             return;
         }
 
@@ -1916,7 +2461,7 @@ class Colis224_Client_Portal_Enhanced {
             return;
         }
 
-        $client_id = intval($_SESSION['colis224_client_id']);
+        // $client_id déjà récupéré plus haut via get_current_client_id()
         $subject = sanitize_text_field(wp_unslash($_POST['subject']));
         $message = sanitize_textarea_field(wp_unslash($_POST['message']));
 
@@ -2007,22 +2552,21 @@ class Colis224_Client_Portal_Enhanced {
      * AJAX: Obtenir la conversation d'un ticket
      */
     public function ajax_get_ticket_conversation() {
-        if (!session_id()) {
-            session_start();
-        }
-
+        // Vérifier le nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_client_portal')) {
             wp_send_json_error(array('message' => 'Nonce invalide'));
             return;
         }
 
-        if (!isset($_SESSION['colis224_client_id'])) {
-            wp_send_json_error(array('message' => 'Non connecté'));
+        // Vérifier l'authentification WordPress
+        $client_id = $this->verify_client_ajax_auth();
+        if (!$client_id) {
+            wp_send_json_error(array('message' => 'Non connecté. Veuillez vous reconnecter.'));
             return;
         }
 
         $ticket_id = intval($_POST['ticket_id']);
-        $client_id = intval($_SESSION['colis224_client_id']);
+        // $client_id déjà récupéré via verify_client_ajax_auth()
         global $wpdb;
 
         // Vérifier que le ticket appartient au client
@@ -2091,23 +2635,22 @@ class Colis224_Client_Portal_Enhanced {
      * AJAX: Envoyer une réponse à un ticket
      */
     public function ajax_reply_ticket() {
-        if (!session_id()) {
-            session_start();
-        }
-
+        // Vérifier le nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_client_portal')) {
             wp_send_json_error(array('message' => 'Nonce invalide'));
             return;
         }
 
-        if (!isset($_SESSION['colis224_client_id'])) {
-            wp_send_json_error(array('message' => 'Non connecté'));
+        // Vérifier l'authentification WordPress
+        $client_id = $this->verify_client_ajax_auth();
+        if (!$client_id) {
+            wp_send_json_error(array('message' => 'Non connecté. Veuillez vous reconnecter.'));
             return;
         }
 
         $ticket_id = intval($_POST['ticket_id']);
         $message = sanitize_textarea_field(wp_unslash($_POST['message']));
-        $client_id = intval($_SESSION['colis224_client_id']);
+        // $client_id déjà récupéré via verify_client_ajax_auth()
 
         if (empty($message)) {
             wp_send_json_error(array('message' => 'Message vide'));
@@ -2175,28 +2718,27 @@ class Colis224_Client_Portal_Enhanced {
      * AJAX: Obtenir les détails d'un colis
      */
     public function ajax_get_parcel_details() {
-        // Démarrer la session si nécessaire
-        if (!session_id()) {
-            session_start();
-        }
-        
+        // Vérifier le nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_client_portal')) {
             wp_send_json_error(array('message' => 'Nonce invalide'));
             return;
         }
 
-        if (!isset($_SESSION['colis224_client_id'])) {
-            wp_send_json_error(array('message' => 'Non connecté'));
+        // Vérifier l'authentification WordPress
+        $client_id = $this->verify_client_ajax_auth();
+        if (!$client_id) {
+            wp_send_json_error(array('message' => 'Non connecté. Veuillez vous reconnecter.'));
             return;
         }
 
         $parcel_id = intval($_POST['parcel_id']);
         global $wpdb;
 
+        // $client_id déjà récupéré via verify_client_ajax_auth()
         $parcel = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}colis224_parcels WHERE id = %d AND client_id = %d",
             $parcel_id,
-            $_SESSION['colis224_client_id']
+            $client_id
         ));
 
         if (!$parcel) {
@@ -2250,6 +2792,45 @@ class Colis224_Client_Portal_Enhanced {
                 <strong>📅 Date de création:</strong>
                 <span><?php echo date('d/m/Y H:i', strtotime($parcel->created_at)); ?></span>
             </div>
+
+            <?php
+            // Affichage des photos du colis
+            if (!empty($parcel->photos)) {
+                $photos = json_decode($parcel->photos, true);
+                if (is_array($photos) && count($photos) > 0) {
+                    ?>
+                    <div class="detail-section">
+                        <h4>📸 Photos du colis</h4>
+                        <div class="parcel-photos-grid">
+                            <?php foreach ($photos as $photo_url): ?>
+                                <?php if (!empty($photo_url)): ?>
+                                    <div class="photo-item">
+                                        <a href="<?php echo esc_url($photo_url); ?>" target="_blank" rel="noopener">
+                                            <img src="<?php echo esc_url($photo_url); ?>" alt="Photo du colis" loading="lazy">
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php
+                }
+            }
+
+            // Affichage du reçu
+            if (!empty($parcel->receipt_photo)) {
+                ?>
+                <div class="detail-section">
+                    <h4>🧾 Reçu de paiement</h4>
+                    <div class="receipt-photo">
+                        <a href="<?php echo esc_url($parcel->receipt_photo); ?>" target="_blank" rel="noopener">
+                            <img src="<?php echo esc_url($parcel->receipt_photo); ?>" alt="Reçu de paiement" loading="lazy">
+                        </a>
+                    </div>
+                </div>
+                <?php
+            }
+            ?>
         </div>
 
         <style>
@@ -2268,6 +2849,65 @@ class Colis224_Client_Portal_Enhanced {
             font-size: 12px;
             font-weight: bold;
         }
+        .detail-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+        .detail-section h4 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            color: #333;
+        }
+        .parcel-photos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .photo-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .photo-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .photo-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+        .receipt-photo {
+            margin-top: 15px;
+            max-width: 400px;
+        }
+        .receipt-photo img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .receipt-photo:hover img {
+            transform: scale(1.02);
+        }
+        @media (max-width: 768px) {
+            .parcel-photos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 10px;
+            }
+            .photo-item img {
+                height: 100px;
+            }
+            .receipt-photo {
+                max-width: 100%;
+            }
+        }
         </style>
         <?php
         $html = ob_get_clean();
@@ -2279,21 +2919,20 @@ class Colis224_Client_Portal_Enhanced {
      * AJAX: Envoyer un message chat
      */
     public function ajax_send_message() {
-        if (!session_id()) {
-            session_start();
-        }
-
+        // Vérifier le nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_client_portal')) {
             wp_send_json_error(array('message' => 'Nonce invalide'));
             return;
         }
 
-        if (!isset($_SESSION['colis224_client_id'])) {
-            wp_send_json_error(array('message' => 'Non connecté'));
+        // Vérifier l'authentification WordPress
+        $client_id = $this->verify_client_ajax_auth();
+        if (!$client_id) {
+            wp_send_json_error(array('message' => 'Non connecté. Veuillez vous reconnecter.'));
             return;
         }
 
-        $client_id = intval($_SESSION['colis224_client_id']);
+        // $client_id déjà récupéré via verify_client_ajax_auth()
         $message = sanitize_textarea_field(wp_unslash($_POST['message']));
 
         if (empty($message)) {
@@ -2385,21 +3024,20 @@ class Colis224_Client_Portal_Enhanced {
      * AJAX: Obtenir les messages chat
      */
     public function ajax_get_messages() {
-        if (!session_id()) {
-            session_start();
-        }
-
+        // Vérifier le nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_client_portal')) {
             wp_send_json_error(array('message' => 'Nonce invalide'));
             return;
         }
 
-        if (!isset($_SESSION['colis224_client_id'])) {
-            wp_send_json_error(array('message' => 'Non connecté'));
+        // Vérifier l'authentification WordPress
+        $client_id = $this->verify_client_ajax_auth();
+        if (!$client_id) {
+            wp_send_json_error(array('message' => 'Non connecté. Veuillez vous reconnecter.'));
             return;
         }
 
-        $client_id = intval($_SESSION['colis224_client_id']);
+        // $client_id déjà récupéré via verify_client_ajax_auth()
         $conversation_id = 'CONV-' . $client_id;
         global $wpdb;
 
@@ -2428,21 +3066,20 @@ class Colis224_Client_Portal_Enhanced {
      * AJAX: Obtenir le nombre de messages non lus
      */
     public function ajax_get_unread_count() {
-        if (!session_id()) {
-            session_start();
-        }
-
+        // Vérifier le nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_client_portal')) {
             wp_send_json_error(array('count' => 0));
             return;
         }
 
-        if (!isset($_SESSION['colis224_client_id'])) {
+        // Vérifier l'authentification WordPress
+        $client_id = $this->verify_client_ajax_auth();
+        if (!$client_id) {
             wp_send_json_success(array('count' => 0));
             return;
         }
 
-        $client_id = intval($_SESSION['colis224_client_id']);
+        // $client_id déjà récupéré via verify_client_ajax_auth()
         $conversation_id = 'CONV-' . $client_id;
         global $wpdb;
 
@@ -2461,23 +3098,28 @@ class Colis224_Client_Portal_Enhanced {
      * AJAX: Créer un colis depuis l'espace client
      */
     public function ajax_create_parcel() {
-        if (!session_id()) {
-            session_start();
-        }
-
+        // Vérifier le nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_client_portal')) {
             wp_send_json_error(array('message' => 'Nonce invalide'));
             return;
         }
 
-        if (!isset($_SESSION['colis224_client_id'])) {
-            wp_send_json_error(array('message' => 'Non connecté'));
+        // Vérifier l'authentification WordPress
+        $client_id = $this->verify_client_ajax_auth();
+        if (!$client_id) {
+            wp_send_json_error(array('message' => 'Non connecté. Veuillez vous reconnecter.'));
+            return;
+        }
+
+        // SÉCURITÉ: Vérifier les permissions (réservé aux admins, agents, éditeurs, auteurs)
+        if (!current_user_can('colis224_create_parcel') && !current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => '🚫 Permission refusée. Cette action est réservée aux administrateurs et agents.'));
             return;
         }
 
         global $wpdb;
         $table_parcels = $wpdb->prefix . 'colis224_parcels';
-        $client_id = intval($_SESSION['colis224_client_id']);
+        // $client_id déjà récupéré via verify_client_ajax_auth()
 
         // Générer le numéro de suivi
         $recipient_phone = sanitize_text_field($_POST['recipient_phone']);
@@ -2527,17 +3169,22 @@ class Colis224_Client_Portal_Enhanced {
      * AJAX: Créer un client depuis l'espace client
      */
     public function ajax_create_client() {
-        if (!session_id()) {
-            session_start();
-        }
-
+        // Vérifier le nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_client_portal')) {
             wp_send_json_error(array('message' => 'Nonce invalide'));
             return;
         }
 
-        if (!isset($_SESSION['colis224_client_id'])) {
-            wp_send_json_error(array('message' => 'Non connecté'));
+        // Vérifier l'authentification WordPress
+        $client_id = $this->verify_client_ajax_auth();
+        if (!$client_id) {
+            wp_send_json_error(array('message' => 'Non connecté. Veuillez vous reconnecter.'));
+            return;
+        }
+
+        // SÉCURITÉ: Vérifier les permissions (réservé aux admins, agents, éditeurs, auteurs)
+        if (!current_user_can('colis224_manage_clients') && !current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => '🚫 Permission refusée. Cette action est réservée aux administrateurs et agents.'));
             return;
         }
 
@@ -2586,17 +3233,22 @@ class Colis224_Client_Portal_Enhanced {
      * AJAX: Créer un départ depuis l'espace client
      */
     public function ajax_create_departure() {
-        if (!session_id()) {
-            session_start();
-        }
-
+        // Vérifier le nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_client_portal')) {
             wp_send_json_error(array('message' => 'Nonce invalide'));
             return;
         }
 
-        if (!isset($_SESSION['colis224_client_id'])) {
-            wp_send_json_error(array('message' => 'Non connecté'));
+        // Vérifier l'authentification WordPress
+        $client_id = $this->verify_client_ajax_auth();
+        if (!$client_id) {
+            wp_send_json_error(array('message' => 'Non connecté. Veuillez vous reconnecter.'));
+            return;
+        }
+
+        // SÉCURITÉ: Vérifier les permissions (réservé aux admins, agents, éditeurs, auteurs)
+        if (!current_user_can('colis224_create_parcel') && !current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => '🚫 Permission refusée. Cette action est réservée aux administrateurs et agents.'));
             return;
         }
 
@@ -2641,17 +3293,22 @@ class Colis224_Client_Portal_Enhanced {
      * AJAX: Rechercher des clients existants
      */
     public function ajax_search_clients() {
-        if (!session_id()) {
-            session_start();
-        }
-
+        // Vérifier le nonce
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_client_portal')) {
             wp_send_json_error(array('message' => 'Nonce invalide'));
             return;
         }
 
-        if (!isset($_SESSION['colis224_client_id'])) {
-            wp_send_json_error(array('message' => 'Non connecté'));
+        // Vérifier l'authentification WordPress
+        $client_id = $this->verify_client_ajax_auth();
+        if (!$client_id) {
+            wp_send_json_error(array('message' => 'Non connecté. Veuillez vous reconnecter.'));
+            return;
+        }
+
+        // SÉCURITÉ: Vérifier les permissions (réservé aux admins, agents, éditeurs, auteurs)
+        if (!current_user_can('colis224_manage_clients') && !current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => '🚫 Permission refusée. Cette action est réservée aux administrateurs et agents.'));
             return;
         }
 
@@ -2662,23 +3319,60 @@ class Colis224_Client_Portal_Enhanced {
             return;
         }
 
+        // v2.18.23: Cache des résultats de recherche pour performances maximales
+        $cache_key = 'colis224_client_search_' . md5($term);
+        $cached_results = get_transient($cache_key);
+
+        if ($cached_results !== false) {
+            wp_send_json_success($cached_results);
+            return;
+        }
+
         global $wpdb;
         $table_clients = $wpdb->prefix . 'colis224_clients';
 
+        // v2.18.24: Requête SQL ultra-optimisée pour recherche instantanée
+        // Priorité : match exact > commence par > contient
         $results = $wpdb->get_results($wpdb->prepare("
-            SELECT id, name, phone, email, company_name
-            FROM $table_clients
-            WHERE name LIKE %s
-               OR phone LIKE %s
-               OR email LIKE %s
-               OR company_name LIKE %s
-            ORDER BY name ASC
-            LIMIT 10
+            (
+                SELECT id, name, phone, email, company_name, 1 as priority
+                FROM $table_clients
+                WHERE name = %s OR phone = %s
+                LIMIT 3
+            )
+            UNION
+            (
+                SELECT id, name, phone, email, company_name, 2 as priority
+                FROM $table_clients
+                WHERE (name LIKE %s OR phone LIKE %s)
+                  AND name != %s AND phone != %s
+                LIMIT 3
+            )
+            UNION
+            (
+                SELECT id, name, phone, email, company_name, 3 as priority
+                FROM $table_clients
+                WHERE (name LIKE %s OR email LIKE %s OR company_name LIKE %s)
+                  AND name NOT LIKE %s AND phone NOT LIKE %s
+                LIMIT 2
+            )
+            ORDER BY priority ASC, name ASC
+            LIMIT 5
         ",
+            // Match exact
+            $term,
+            $term,
+            // Commence par
+            $wpdb->esc_like($term) . '%',
+            $wpdb->esc_like($term) . '%',
+            $term,
+            $term,
+            // Contient
             '%' . $wpdb->esc_like($term) . '%',
             '%' . $wpdb->esc_like($term) . '%',
             '%' . $wpdb->esc_like($term) . '%',
-            '%' . $wpdb->esc_like($term) . '%'
+            $wpdb->esc_like($term) . '%',
+            $wpdb->esc_like($term) . '%'
         ));
 
         $formatted_results = array();
@@ -2691,6 +3385,9 @@ class Colis224_Client_Portal_Enhanced {
                 'company_name' => $client->company_name
             );
         }
+
+        // v2.18.23: Sauvegarder dans le cache pour 5 minutes
+        set_transient($cache_key, $formatted_results, 5 * MINUTE_IN_SECONDS);
 
         wp_send_json_success($formatted_results);
     }

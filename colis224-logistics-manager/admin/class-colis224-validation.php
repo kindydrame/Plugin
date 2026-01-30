@@ -124,7 +124,7 @@ class Colis224_Validation {
 
                 $stats = array(
                     'pending' => $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE validation_status = 'pending'"),
-                    'approved' => $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE validation_status = 'approved'"),
+                    'validated' => $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE validation_status = 'validated'"),
                     'rejected' => $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE validation_status = 'rejected'")
                 );
                 ?>
@@ -134,8 +134,8 @@ class Colis224_Validation {
                         <td><span style="color: #f0a000; font-weight: bold; font-size: 18px;"><?php echo esc_html($stats['pending']); ?></span></td>
                     </tr>
                     <tr>
-                        <td><strong>✅ Approuvés</strong></td>
-                        <td><span style="color: #46b450; font-weight: bold; font-size: 18px;"><?php echo esc_html($stats['approved']); ?></span></td>
+                        <td><strong>✅ Validés</strong></td>
+                        <td><span style="color: #46b450; font-weight: bold; font-size: 18px;"><?php echo esc_html($stats['validated']); ?></span></td>
                     </tr>
                     <tr>
                         <td><strong>❌ Rejetés</strong></td>
@@ -349,7 +349,7 @@ class Colis224_Validation {
         $updated = $wpdb->update(
             $table,
             array(
-                'validation_status' => 'approved',
+                'validation_status' => 'validated',
                 'validated_by' => $current_user->ID,
                 'validated_at' => current_time('mysql')
             ),
@@ -365,10 +365,10 @@ class Colis224_Validation {
 
         // Enregistrer dans l'historique
         if (class_exists('Colis224_Parcel_History')) {
-            Colis224_Parcel_History::log_validation($parcel_id, 'approved', '');
+            Colis224_Parcel_History::log_validation($parcel_id, 'validated', '');
         }
 
-        wp_send_json_success(array('message' => 'Colis approuvé avec succès.'));
+        wp_send_json_success(array('message' => 'Colis validé avec succès.'));
     }
 
     /**

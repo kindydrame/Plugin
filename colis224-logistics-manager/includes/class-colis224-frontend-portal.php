@@ -222,31 +222,83 @@ class Colis224_Frontend_Portal {
      * Shortcode du portail client [colis224_client_portal]
      */
     public function client_portal_shortcode($atts) {
+        // Définir les headers no-cache pour éviter les problèmes de cache
+        if (!headers_sent()) {
+            header('Cache-Control: no-cache, no-store, must-revalidate, max-age=0');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+        }
+
         ob_start();
 
+        // NOUVELLE VERSION: Utiliser le système WordPress natif
+        // Plus besoin de gérer manuellement les sessions PHP !
+
+        // Vérifier si client Colis224 connecté via WordPress
+        $is_logged_in = Colis224_WP_User_Sync::is_client_logged_in();
+        $user_id = is_user_logged_in() ? get_current_user_id() : 0;
+        $client_id = Colis224_WP_User_Sync::get_current_client_id();
+
+        error_log('COLIS224 PORTAL: is_logged_in=' . ($is_logged_in ? 'OUI' : 'NON') . ', user_id=' . $user_id . ', client_id=' . ($client_id ?: 'AUCUN'));
+
         // Afficher un message de déconnexion si présent ET si l'utilisateur n'est PAS connecté
-        if (isset($_GET['logout']) && $_GET['logout'] === 'success' && !Colis224_Client_Auth::is_client_logged_in()) {
+        $show_logout_message = false;
+        if (isset($_GET['logout']) && $_GET['logout'] === 'success' && !$is_logged_in) {
+            $show_logout_message = true;
             echo '<div class="colis224-notice colis224-notice-success">
                 <p>✅ Vous avez été déconnecté avec succès.</p>
             </div>';
+
+            // CORRECTION: Supprimer automatiquement le paramètre logout de l'URL
+            echo '<script>
+            (function() {
+                if (window.history && window.history.replaceState) {
+                    var cleanUrl = window.location.href.replace(/[?&]logout=success/gi, "");
+                    cleanUrl = cleanUrl.replace(/[?&]$/, "");
+                    cleanUrl = cleanUrl.replace(/\?&/, "?");
+                    window.history.replaceState({}, document.title, cleanUrl);
+                }
+            })();
+            </script>';
         }
 
         // Vérifier si le client est connecté
-        if (!Colis224_Client_Auth::is_client_logged_in()) {
-            $this->display_login_form();
-        } else {
-            // Vérifier si la session n'est pas expirée
-            if (Colis224_Client_Auth::is_session_expired()) {
-                Colis224_Client_Auth::logout_client();
-                echo '<div class="colis224-notice colis224-notice-warning">
-                    <p>⚠️ Votre session a expiré. Veuillez vous reconnecter.</p>
-                </div>';
-                $this->display_login_form();
-            } else {
-                // Rafraîchir la session
-                Colis224_Client_Auth::refresh_session();
-                $this->display_client_dashboard();
+        if (!$is_logged_in) {
+            error_log('COLIS224 PORTAL: Client non connecté, redirection vers page de connexion');
+
+            // Obtenir l'URL actuelle pour la redirection après connexion
+            $current_url = (is_ssl() ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+
+            // Nettoyer les paramètres de logout de l'URL
+            $current_url = remove_query_arg(array('logout', 'action', '_wpnonce'), $current_url);
+
+            // Obtenir l'URL de connexion (compatible avec WPS Hide Login et autres plugins)
+            $login_url = wp_login_url($current_url);
+
+            // COMPATIBILITÉ WPS HIDE LOGIN
+            // Si WPS Hide Login est actif, il modifie automatiquement wp_login_url()
+            // Mais ajoutons une vérification explicite pour plus de robustesse
+            if (function_exists('wps_hide_login_get_page')) {
+                // WPS Hide Login actif - obtenir l'URL personnalisée
+                $custom_login_slug = get_option('whl_page', 'login');
+                if ($custom_login_slug) {
+                    $login_url = home_url($custom_login_slug);
+                    // Ajouter le paramètre redirect_to
+                    $login_url = add_query_arg('redirect_to', urlencode($current_url), $login_url);
+                    error_log('COLIS224 PORTAL: WPS Hide Login détecté - URL personnalisée: ' . $login_url);
+                }
             }
+
+            error_log('COLIS224 PORTAL: Redirection vers: ' . $login_url);
+
+            // Rediriger vers la page de connexion
+            wp_redirect($login_url);
+            exit;
+        } else {
+            error_log('COLIS224 PORTAL: Client connecté (WP), affichage dashboard - client_id=' . $client_id);
+            // WordPress gère automatiquement l'expiration des sessions
+            // Pas besoin de vérifier manuellement
+            $this->display_client_dashboard();
         }
 
         return ob_get_clean();
@@ -293,13 +345,17 @@ class Colis224_Frontend_Portal {
      * Tableau de bord client
      */
     private function display_client_dashboard() {
-        $client_id = Colis224_Client_Auth::get_current_client_id();
-        
+        // NOUVELLE VERSION: Utiliser WordPress natif
+        $client_id = Colis224_WP_User_Sync::get_current_client_id();
+
         if (!$client_id) {
+            echo '<div class="colis224-notice colis224-notice-error">
+                <p>⚠️ Erreur: Impossible de récupérer vos informations client.</p>
+            </div>';
             $this->display_login_form();
             return;
         }
-        
+
         // Utiliser le nouvel espace client amélioré
         echo Colis224_Client_Portal_Enhanced::render_enhanced_portal($client_id);
     }
@@ -452,7 +508,7 @@ class Colis224_Frontend_Portal {
         }
 
         // Vérifier que la classe existe
-        if (!class_exists('Colis224_Client_Auth')) {
+        if (!class_exists('Colis224_WP_User_Sync')) {
             ob_end_clean();
             wp_send_json_error(array(
                 'message' => 'Erreur système. Veuillez contacter l\'administrateur.'
@@ -460,10 +516,13 @@ class Colis224_Frontend_Portal {
         }
 
         try {
-            // Utiliser la nouvelle classe d'authentification
-            $result = Colis224_Client_Auth::authenticate_by_phone($phone, $password);
+            // NOUVELLE VERSION: Utiliser l'authentification WordPress native
+            $result = Colis224_WP_User_Sync::authenticate_by_phone($phone, $password);
 
             if ($result['success']) {
+                // WordPress gère automatiquement les cookies d'authentification
+                // via wp_set_auth_cookie() appelé dans authenticate_by_phone()
+
                 // Préparer l'URL de redirection
                 $redirect_url = '';
                 if (isset($_POST['redirect_url'])) {
@@ -478,10 +537,16 @@ class Colis224_Frontend_Portal {
                     $redirect_url = home_url();
                 }
 
+                // Nettoyer l'URL des paramètres problématiques
+                $redirect_url = remove_query_arg(array('logout', 'action', '_wpnonce'), $redirect_url);
+
+                error_log('COLIS224 LOGIN_AJAX: Connexion WP réussie - user_id=' . $result['user_id'] . ', client_id=' . $result['client_id']);
+
                 ob_end_clean();
                 wp_send_json_success(array(
                     'message' => $result['message'],
-                    'redirect_url' => $redirect_url
+                    'redirect_url' => $redirect_url,
+                    'wp_auth' => true // Indique l'utilisation de l'auth WordPress
                 ));
             } else {
                 ob_end_clean();
@@ -490,6 +555,7 @@ class Colis224_Frontend_Portal {
                 ));
             }
         } catch (Exception $e) {
+            error_log('COLIS224 LOGIN_AJAX ERROR: ' . $e->getMessage());
             ob_end_clean();
             wp_send_json_error(array(
                 'message' => 'Une erreur est survenue lors de la connexion. Veuillez réessayer.'

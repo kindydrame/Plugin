@@ -6,6 +6,9 @@
     'use strict';
 
     $(document).ready(function() {
+        // DEBUG: Logger les cookies au chargement de la page
+        console.log('🌐 Page chargée - Cookies:', document.cookie);
+        console.log('🔍 Session storage:', sessionStorage.getItem('colis224_debug'));
 
         // === SUIVI DE COLIS ===
         $('#colis224-tracking-form').on('submit', function(e) {
@@ -107,19 +110,44 @@
                     client_password: $('#client_password').val()
                 },
                 success: function(response) {
-                    console.log('Réponse serveur:', response);
+                    console.log('✅ Réponse serveur:', response);
+
                     if (response.success) {
-                        // Afficher le message de succès
+                        // DEBUG: Afficher les infos de debug
+                        if (response.data.debug) {
+                            console.log('🔍 DEBUG INFO:', response.data.debug);
+                            console.log('🍪 Cookies actuels:', document.cookie);
+                        }
+
+                        var targetUrl = response.data.redirect_url || window.location.href;
+
+                        // CORRECTION: L'URL est déjà nettoyée côté serveur
+                        // Mais on double-vérifie côté client pour être sûr
+                        targetUrl = targetUrl.replace(/[?&]logout=success/gi, '');
+                        targetUrl = targetUrl.replace(/[?&]action=colis224_logout/gi, '');
+                        targetUrl = targetUrl.replace(/[?&]_wpnonce=[^&]*/gi, '');
+                        targetUrl = targetUrl.replace(/[?&]$/, '');
+                        targetUrl = targetUrl.replace(/\?&/, '?');
+
+                        // Afficher le message de succès avec lien de fallback
                         $message.html(
                             '<div class="colis224-message colis224-message-success">' +
                             response.data.message +
+                            '<br><small>Redirection dans 1 seconde...</small>' +
+                            '<br><a href="' + targetUrl + '" style="color: #fff; text-decoration: underline; font-weight: bold;">Ou cliquez ici pour accéder maintenant</a>' +
                             '</div>'
                         );
 
-                        // Redirection après 1 seconde
+                        // REDIRECTION avec délai augmenté pour laisser le temps aux cookies de se propager
+                        console.log('🔄 Redirection vers:', targetUrl);
+                        console.log('🍪 Cookies:', document.cookie);
+                        console.log('⏱️ Attente 1 seconde pour la session...');
+
+                        // Délai de 1 seconde pour que la session soit bien écrite
                         setTimeout(function() {
-                            var targetUrl = response.data.redirect_url || window.location.href;
-                            window.location.href = targetUrl;
+                            console.log('➡️ Redirection maintenant...');
+                            // Utiliser replace au lieu de href pour éviter le retour arrière
+                            window.location.replace(targetUrl);
                         }, 1000);
                     } else {
                         // Afficher le message d'erreur

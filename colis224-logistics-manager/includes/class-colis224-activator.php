@@ -27,6 +27,14 @@ class Colis224_Activator {
             require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-database.php';
             Colis224_Database::create_tables();
 
+            // Création de la table frontend calculator (v2.20.0)
+            if (file_exists(COLIS224_PLUGIN_DIR . 'includes/class-colis224-frontend-calculator.php')) {
+                require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-frontend-calculator.php';
+                if (class_exists('Colis224_Frontend_Calculator')) {
+                    Colis224_Frontend_Calculator::create_table();
+                }
+            }
+
             // Insertion des données par défaut
             self::insert_default_data();
 

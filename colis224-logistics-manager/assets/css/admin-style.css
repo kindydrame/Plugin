@@ -674,11 +674,396 @@ a .dashicons-edit {
     .colis224-actions .button-small {
         padding: 0 6px !important;
     }
-    
+
     /* Option: Cacher le texte sur mobile et garder juste l'icône */
-    /* Décommenter si nécessaire 
+    /* Décommenter si nécessaire
     .colis224-actions .button-small .button-text {
         display: none;
     }
     */
+}
+
+/* ====================================================================
+   DESIGN MODERNE BACK-END v2.19.0
+   Améliorations visuelles générales pour un look plus professionnel
+   ==================================================================== */
+
+/* === MENU WORDPRESS === */
+#adminmenu #toplevel_page_colis224-dashboard .wp-menu-image:before {
+    content: '\f175'; /* Dashicon airplane */
+    font-size: 20px;
+}
+
+#adminmenu #toplevel_page_colis224-dashboard.current .wp-menu-image:before,
+#adminmenu #toplevel_page_colis224-dashboard:hover .wp-menu-image:before {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* === TITRES DE PAGES === */
+.wrap h1, .wrap h2 {
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.wrap h1 .dashicons,
+.wrap h2 .dashicons {
+    color: #667eea;
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+}
+
+/* === NOTICES / ALERTES === */
+.notice {
+    border-left-width: 4px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.notice-success {
+    border-left-color: #10b981;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+.notice-error {
+    border-left-color: #ef4444;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+}
+
+.notice-warning {
+    border-left-color: #f59e0b;
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+}
+
+.notice-info {
+    border-left-color: #3b82f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+/* === BOUTONS MODERNES === */
+.button-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.button-primary:hover,
+.button-primary:focus {
+    background: linear-gradient(135deg, #5568d3 0%, #6a3d8f 100%);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    transform: translateY(-1px);
+}
+
+/* === TABLEAUX MODERNES === */
+.wp-list-table {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.wp-list-table thead {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.wp-list-table th {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 12px;
+    color: #475569;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.wp-list-table tbody tr {
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.wp-list-table tbody tr:hover {
+    background: #f8fafc;
+    transform: scale(1.001);
+}
+
+.wp-list-table .row-actions {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.wp-list-table tbody tr:hover .row-actions {
+    opacity: 1;
+}
+
+/* === FORMULAIRES MODERNES === */
+.form-table th,
+.form-table td {
+    padding: 20px 10px;
+}
+
+.form-table input[type="text"],
+.form-table input[type="email"],
+.form-table input[type="password"],
+.form-table input[type="number"],
+.form-table textarea,
+.form-table select {
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 14px;
+    transition: all 0.3s ease;
+    background: #f8fafc;
+}
+
+.form-table input[type="text"]:focus,
+.form-table input[type="email"]:focus,
+.form-table input[type="password"]:focus,
+.form-table input[type="number"]:focus,
+.form-table textarea:focus,
+.form-table select:focus {
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+}
+
+/* === WIDGETS DASHBOARD === */
+.postbox {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.postbox .hndle {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 2px solid #e2e8f0;
+    font-weight: 700;
+    padding: 16px 20px;
+}
+
+/* === BADGES ET LABELS === */
+.colis224-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.colis224-badge-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.colis224-badge-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.colis224-badge-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.colis224-badge-info {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.colis224-badge-primary {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+/* === STATISTIQUES / MÉTRIQUES === */
+.colis224-stat-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.colis224-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.colis224-stat-value {
+    font-size: 36px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.colis224-stat-label {
+    font-size: 13px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+/* === TABS / ONGLETS === */
+.nav-tab-wrapper {
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 20px;
+}
+
+.nav-tab {
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-weight: 600;
+    padding: 12px 24px;
+    transition: all 0.3s ease;
+}
+
+.nav-tab:hover {
+    background: rgba(102, 126, 234, 0.05);
+    color: #667eea;
+}
+
+.nav-tab-active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 -2px 8px rgba(102, 126, 234, 0.2);
+}
+
+/* === LOADING / SPINNER === */
+.colis224-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #667eea;
+    font-weight: 600;
+}
+
+.colis224-loading .spinner {
+    float: none;
+    margin: 0 10px 0 0;
+}
+
+/* === SCROLLBAR PERSONNALISÉE === */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #6a3d8f 100%);
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.colis224-card,
+.colis224-stat-card,
+.postbox {
+    animation: fadeIn 0.4s ease;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 782px) {
+    .colis224-stat-value {
+        font-size: 28px;
+    }
+
+    .wrap h1 .dashicons,
+    .wrap h2 .dashicons {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+    }
+}
+
+/* ====================================================================
+   FIX CRITIQUE v2.19.1: Contraste texte sur cartes colorées
+   Ces règles DOIVENT être en dernier pour override le gradient
+   ==================================================================== */
+
+/* Forcer texte blanc sur TOUTES les cartes colorées - Override gradient */
+.colis224-card-blue .colis224-stat-value,
+.colis224-card-blue .colis224-card-content .colis224-stat-value,
+.colis224-card-green .colis224-stat-value,
+.colis224-card-green .colis224-card-content .colis224-stat-value,
+.colis224-card-orange .colis224-stat-value,
+.colis224-card-orange .colis224-card-content .colis224-stat-value,
+.colis224-card-purple .colis224-stat-value,
+.colis224-card-purple .colis224-card-content .colis224-stat-value,
+.colis224-card-red .colis224-stat-value,
+.colis224-card-red .colis224-card-content .colis224-stat-value {
+    color: #ffffff !important;
+    background: none !important;
+    background-image: none !important;
+    background-clip: initial !important;
+    -webkit-background-clip: initial !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-fill-color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+    opacity: 1 !important;
+}
+
+/* Forcer texte blanc sur labels aussi */
+.colis224-card-blue .colis224-stat-label,
+.colis224-card-blue .colis224-card-content .colis224-stat-label,
+.colis224-card-green .colis224-stat-label,
+.colis224-card-green .colis224-card-content .colis224-stat-label,
+.colis224-card-orange .colis224-stat-label,
+.colis224-card-orange .colis224-card-content .colis224-stat-label,
+.colis224-card-purple .colis224-stat-label,
+.colis224-card-purple .colis224-card-content .colis224-stat-label,
+.colis224-card-red .colis224-stat-label,
+.colis224-card-red .colis224-card-content .colis224-stat-label {
+    color: rgba(255, 255, 255, 0.95) !important;
+    background: none !important;
+    background-image: none !important;
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.95) !important;
+    text-fill-color: rgba(255, 255, 255, 0.95) !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+    opacity: 1 !important;
+}
+
+/* Forcer texte blanc sur paragraphes dans cartes colorées */
+.colis224-card-blue p,
+.colis224-card-green p,
+.colis224-card-orange p,
+.colis224-card-purple p,
+.colis224-card-red p {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
 }

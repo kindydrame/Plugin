@@ -182,19 +182,30 @@ class Colis224_Dashboard {
                 </div>
             <?php endif; ?>
 
+            <!-- Hook pour filtres avancés (v2.18.22) -->
+            <?php do_action('colis224_dashboard_before_stats'); ?>
+
             <!-- Cartes de statistiques principales -->
             <div class="colis224-dashboard-grid">
-                <?php if (!$is_driver): // Les livreurs ne voient pas le CA ?>
+                <?php
+                // Vérifier si l'utilisateur est agent, éditeur ou auteur (v2.18.3)
+                $current_user = wp_get_current_user();
+                $is_non_financial_role = $is_agent || $is_driver ||
+                                        in_array('editor', $current_user->roles) ||
+                                        in_array('author', $current_user->roles);
+
+                if (!$is_non_financial_role): // Masquer CA pour agents, éditeurs, auteurs et livreurs
+                ?>
                 <!-- Chiffre d'affaires -->
                 <div class="colis224-card colis224-card-blue">
                     <div class="colis224-card-icon">
                         <span class="dashicons dashicons-money-alt"></span>
                     </div>
                     <div class="colis224-card-content">
-                        <h3><?php echo $is_agent ? 'Mes Colis - CA' : 'Chiffre d\'Affaires'; ?></h3>
+                        <h3>Chiffre d'Affaires</h3>
                         <p class="colis224-stat-value"><?php echo number_format($stats['revenue_total'], 0, ',', ' '); ?> GNF</p>
                         <p class="colis224-stat-label">
-                            <?php echo $is_agent ? 'Total de mes colis' : 'Aujourd\'hui: ' . number_format($stats['revenue_today'], 0, ',', ' ') . ' GNF'; ?>
+                            Aujourd'hui: <?php echo number_format($stats['revenue_today'], 0, ',', ' '); ?> GNF
                         </p>
                     </div>
                 </div>
@@ -224,7 +235,7 @@ class Colis224_Dashboard {
                     </div>
                 </div>
 
-                <?php if (!$is_agent && !$is_driver): // Seulement pour admin/comptable ?>
+                <?php if (!$is_non_financial_role): // Seulement pour admin/comptable - masqué pour agents, éditeurs, auteurs, livreurs ?>
                 <!-- Dépenses -->
                 <div class="colis224-card colis224-card-orange">
                     <div class="colis224-card-icon">
@@ -293,6 +304,9 @@ class Colis224_Dashboard {
                 </div>
             </div>
             <?php endif; ?>
+
+            <!-- Hook pour statistiques filtrées (v2.18.22) -->
+            <?php do_action('colis224_dashboard_after_main_stats'); ?>
 
             <!-- Deuxième ligne de statistiques -->
             <div class="colis224-dashboard-grid colis224-grid-4">
@@ -857,6 +871,12 @@ class Colis224_Dashboard {
             return;
         }
 
+        // Vérifier si l'utilisateur a un rôle non-financier (v2.18.3)
+        $current_user = wp_get_current_user();
+        $hide_financial = $is_agent || $is_driver ||
+                         in_array('editor', $current_user->roles) ||
+                         in_array('author', $current_user->roles);
+
         ?>
         <table class="colis224-table">
             <thead>
@@ -865,8 +885,8 @@ class Colis224_Dashboard {
                     <th>Client</th>
                     <th>Destinataire</th>
                     <th>Statut</th>
-                    <th>Montant</th>
-                    <th>Paiement</th>
+                    <?php if (!$hide_financial): ?><th>Montant</th><?php endif; ?>
+                    <?php if (!$hide_financial): ?><th>Paiement</th><?php endif; ?>
                     <th>Date</th>
                 </tr>
             </thead>
@@ -879,10 +899,12 @@ class Colis224_Dashboard {
                     <td><span class="colis224-badge colis224-badge-<?php echo sanitize_title($parcel->status); ?>">
                         <?php echo esc_html($parcel->status); ?>
                     </span></td>
+                    <?php if (!$hide_financial): ?>
                     <td><?php echo number_format($parcel->total_amount, 0, ',', ' '); ?> <?php echo $parcel->currency; ?></td>
                     <td><span class="colis224-badge colis224-badge-payment-<?php echo sanitize_title($parcel->payment_status); ?>">
                         <?php echo esc_html($parcel->payment_status); ?>
                     </span></td>
+                    <?php endif; ?>
                     <td><?php echo date('d/m/Y', strtotime($parcel->created_at)); ?></td>
                 </tr>
                 <?php endforeach; ?>

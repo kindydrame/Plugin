@@ -3,7 +3,7 @@
  * Plugin Name: Colis224 Logistics Manager
  * Plugin URI: https://colis224.com
  * Description: Système complet de gestion logistique pour entreprise de livraison internationale (Chine, France, Maroc, Sénégal, Côte d'Ivoire, Guinée)
- * Version: 2.16.6
+ * Version: 2.20.10
  * Author: Colis224
  * Author URI: https://colis224.com
  * License: GPL-2.0+
@@ -20,13 +20,18 @@ if (!defined('ABSPATH')) {
 }
 
 // Constantes du plugin
-define('COLIS224_VERSION', '2.16.6');
+define('COLIS224_VERSION', '2.20.10');
 define('COLIS224_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('COLIS224_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('COLIS224_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
 // Démarrer la session pour le portail client (seulement si pas en cours d'activation)
+// Configuration des cookies de session pour compatibilité navigateurs modernes
 if (!defined('WP_CLI') && !session_id() && !headers_sent()) {
+    ini_set('session.cookie_samesite', 'Lax');
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.cookie_secure', is_ssl() ? '1' : '0');
+    ini_set('session.cookie_path', '/');
     @session_start();
 }
 
@@ -62,15 +67,24 @@ class Colis224_Logistics_Manager {
         $this->set_locale();
         $this->init_auth(); // Initialiser l'authentification client
         $this->init_frontend(); // Initialiser les classes frontend
+        $this->init_dashboard_filters(); // Initialiser les filtres avancés (v2.18.22)
         $this->define_admin_hooks();
     }
     
     /**
      * Initialiser l'authentification client (frontend + admin)
+     * NOUVELLE VERSION: Utilise le système d'utilisateurs WordPress natif
      */
     private function init_auth() {
+        // NOUVEAU: Synchronisation avec utilisateurs WordPress
+        if (class_exists('Colis224_WP_User_Sync')) {
+            new Colis224_WP_User_Sync();
+        }
+
+        // ANCIEN: Session PHP personnalisée (conservé pour compatibilité)
+        // TODO: Sera supprimé dans une future version
         if (class_exists('Colis224_Client_Auth')) {
-            new Colis224_Client_Auth();
+            // new Colis224_Client_Auth(); // Désactivé - on utilise WP maintenant
         }
     }
 
@@ -118,6 +132,11 @@ class Colis224_Logistics_Manager {
             new Colis224_Partner_Portal();
         }
 
+        // Portail Agent (v2.18.2)
+        if (class_exists('Colis224_Agent_Portal')) {
+            new Colis224_Agent_Portal();
+        }
+
         // Système d'avis
         if (class_exists('Colis224_Reviews')) {
             new Colis224_Reviews();
@@ -127,6 +146,55 @@ class Colis224_Logistics_Manager {
         if (class_exists('Colis224_UI_Enhancements')) {
             new Colis224_UI_Enhancements();
         }
+
+        // Calculateur frontend (v2.20.0) - Shortcode [colis224_calculator]
+        if (class_exists('Colis224_Frontend_Calculator')) {
+            Colis224_Frontend_Calculator::init();
+        }
+    }
+
+    /**
+     * Initialiser le système de filtres avancés du dashboard (v2.18.22)
+     */
+    private function init_dashboard_filters() {
+        // Enregistrer les hooks pour afficher les filtres dans le dashboard
+        add_action('colis224_dashboard_before_stats', function() {
+            if (current_user_can('manage_options') || current_user_can('colis224_view_parcels')) {
+                echo Colis224_Dashboard_Filters::render_filters_panel();
+            }
+        });
+
+        // Enqueue des assets JS et CSS pour les filtres
+        add_action('admin_enqueue_scripts', function($hook) {
+            // v2.18.28: Charger sur le dashboard et toutes les pages colis224
+            if ($hook !== 'toplevel_page_colis224-dashboard' && strpos($hook, 'colis224') === false) {
+                return;
+            }
+
+            // CSS des filtres avancés
+            wp_enqueue_style(
+                'colis224-dashboard-advanced',
+                COLIS224_PLUGIN_URL . 'assets/css/dashboard-advanced.css',
+                array(),
+                COLIS224_VERSION
+            );
+
+            // JavaScript des filtres
+            wp_enqueue_script(
+                'colis224-dashboard-filters',
+                COLIS224_PLUGIN_URL . 'assets/js/dashboard-filters.js',
+                array('jquery'),
+                COLIS224_VERSION,
+                true
+            );
+
+            // v2.18.28: Variables AJAX pour JavaScript (TOUJOURS charger sur pages colis224)
+            wp_localize_script('colis224-dashboard-filters', 'colis224_ajax', array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'dashboard_nonce' => wp_create_nonce('colis224_dashboard_nonce'),
+                'debug' => WP_DEBUG // Pour faciliter le debugging
+            ));
+        }, 100); // Priorité plus haute pour s'assurer que c'est chargé
     }
 
     /**
@@ -168,6 +236,8 @@ class Colis224_Logistics_Manager {
         // Chargement des classes principales (OBLIGATOIRES)
         $required_files = array(
             COLIS224_PLUGIN_DIR . 'includes/class-colis224-database.php',
+            COLIS224_PLUGIN_DIR . 'includes/class-colis224-db-upgrade.php', // Migration BDD v2.18.3
+            COLIS224_PLUGIN_DIR . 'includes/class-colis224-admin-alerts.php', // Alertes admin v2.18.4
             COLIS224_PLUGIN_DIR . 'includes/class-colis224-admin.php',
             COLIS224_PLUGIN_DIR . 'includes/class-colis224-sanitizer.php'
         );
@@ -183,20 +253,16 @@ class Colis224_Logistics_Manager {
             }
         }
 
-        // Migration système de validation hiérarchique (v2.11.0)
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-migration-validation.php';
+        // Système d'historique des colis (v2.11.0)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-parcel-history.php';
 
         // Système d'archivage automatique (v2.12.0)
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-migration-archiving.php';
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-archiving.php';
 
         // Système de détection et fusion des doublons (v2.13.0)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-duplicate-detector.php';
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-migration-duplicates.php';
 
         // Système de gestion des lots internationaux (v2.14.0)
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-migration-batches.php';
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-batches.php';
 
         // Système d'import CSV (v2.15.0)
@@ -205,19 +271,19 @@ class Colis224_Logistics_Manager {
         // Charger l'authentification client après que WordPress soit prêt
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-client-auth.php';
 
+        // NOUVEAU v2.18.9: Synchronisation avec utilisateurs WordPress
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-wp-user-sync.php';
+
         // Chargement des modules admin
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-diagnostic.php';
-        require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-migration-admin.php';  // v2.11.0
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-validation.php';       // v2.11.0
-        require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-migration-archiving-admin.php';  // v2.12.0
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-archives.php';         // v2.12.0
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-duplicates.php';       // v2.13.0
-        require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-migration-duplicates-admin.php';  // v2.13.0
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-batches-admin.php';   // v2.14.0
-        require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-migration-batches-admin.php';  // v2.14.0
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-csv-import-admin.php';  // v2.15.0
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-colis.php';
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-clients.php';
+        require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-message-templates.php';  // v2.18.4
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-partenaires.php';
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-equipe.php';
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-comptabilite.php';
@@ -225,6 +291,21 @@ class Colis224_Logistics_Manager {
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-parametres.php';
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-achat.php';
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-dashboard.php';
+
+        // Système de filtres avancés dashboard (v2.18.22)
+        require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-dashboard-filters.php';
+        require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-dashboard-advanced-stats.php';
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-stats-ajax.php';
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-emojis.php';        // v2.18.26: Helper pour emojis
+
+        // Système de grilles tarifaires et calculateurs (v2.19.0)
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-pricing-data.php';   // Données tarifaires
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-pricing-engine.php'; // Moteur de calcul
+        require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-pricing.php';           // Page admin grilles
+
+        // Calculateur frontend pour les clients (v2.20.0)
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-frontend-calculator.php';
+        require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-frontend-requests.php';    // v2.20.6: Page admin devis frontend
 
         // Nouvelles fonctionnalités v2.0
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-frontend-portal.php';
@@ -239,6 +320,9 @@ class Colis224_Logistics_Manager {
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-permissions.php';       // Système de permissions
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-export.php';            // Export avancé
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-sms-api.php';           // SMS API
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-nimbasms.php';          // NimbaSMS Integration (v2.18.6)
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-activator-nimbasms.php'; // NimbaSMS Auto-Activation (v2.18.6)
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-diagnostic-client.php'; // Diagnostic Espace Client (TEMPORAIRE - v2.18.6)
 
         // Nouvelles fonctionnalités v2.3+ (Programme Fidélité + Multi-Entrepôts)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-loyalty.php';           // Programme de fidélité
@@ -251,23 +335,19 @@ class Colis224_Logistics_Manager {
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-support-admin.php';       // Admin support
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-paypal.php';           // Intégration PayPal
 
-        // Nouvelles fonctionnalités v2.7+ (Surveillance & Avis)
+        // Nouvelles fonctionnalités v2.7+ (Surveillance)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-auto-reminders.php';   // Relances automatiques
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-surveillance-admin.php';  // Admin surveillance
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-reviews.php';          // Système d'avis
 
-        // Nouvelles fonctionnalités v2.8+ (Live Chat, Inventory, Marketing, Workflows, MultiLang)
+        // Nouvelles fonctionnalités v2.8+ (Live Chat, Inventory, MultiLang)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-live-chat.php';         // Live Chat Support
         require_once COLIS224_PLUGIN_DIR . 'admin/class-colis224-live-chat-admin.php';     // Admin Live Chat
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-inventory-advanced.php'; // Gestion stock avancée
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-marketing.php';         // Marketing Automation
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-partner-portal.php';    // Portail Partenaire
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-workflows.php';         // Automatisation Workflows
+        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-agent-portal.php';      // Portail Agent (v2.18.2)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-multilang.php';         // Multi-langues
 
-        // Nouvelles fonctionnalités v2.9+ (Fleet, Insurance, Scheduling, Analytics)
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-fleet-management.php';  // Gestion de flotte
-        require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-insurance.php';         // Assurance et déclarations
+        // Nouvelles fonctionnalités v2.9+ (Scheduling, Analytics)
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-scheduling.php';        // Réservation et planification
         require_once COLIS224_PLUGIN_DIR . 'includes/class-colis224-analytics.php';         // Tableau de bord analytique
 
@@ -306,6 +386,87 @@ class Colis224_Logistics_Manager {
         add_action('admin_menu', array($admin, 'add_plugin_admin_menu'));
         add_action('admin_enqueue_scripts', array($admin, 'enqueue_styles'));
         add_action('admin_enqueue_scripts', array($admin, 'enqueue_scripts'));
+
+        // Enregistrer les scripts/styles des calculateurs de prix (v2.19.0)
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_pricing_assets'));
+
+        // AJAX handler pour les calculateurs (v2.19.0)
+        add_action('wp_ajax_colis224_calculate_pricing', array($this, 'ajax_calculate_pricing'));
+    }
+
+    /**
+     * Charger les assets CSS/JS des calculateurs de prix
+     * v2.19.0
+     */
+    public function enqueue_pricing_assets($hook) {
+        // Charger uniquement sur la page grilles tarifaires
+        if ($hook !== 'toplevel_page_colis224-pricing' && strpos($hook, 'colis224-pricing') === false) {
+            return;
+        }
+
+        // CSS
+        wp_enqueue_style(
+            'colis224-pricing-calculator',
+            COLIS224_PLUGIN_URL . 'assets/css/pricing-calculator.css',
+            array(),
+            COLIS224_VERSION
+        );
+
+        // JavaScript
+        wp_enqueue_script(
+            'colis224-pricing-calculator',
+            COLIS224_PLUGIN_URL . 'assets/js/pricing-calculator.js',
+            array('jquery'),
+            COLIS224_VERSION,
+            true
+        );
+
+        // Passer des variables à JavaScript
+        wp_localize_script('colis224-pricing-calculator', 'colis224Ajax', array(
+            'ajaxurl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('colis224_pricing_nonce')
+        ));
+    }
+
+    /**
+     * AJAX Handler pour les calculs de prix
+     * v2.19.0
+     */
+    public function ajax_calculate_pricing() {
+        // Vérifier le nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_pricing_nonce')) {
+            wp_send_json_error(array('message' => 'Erreur de sécurité'));
+            return;
+        }
+
+        $calculator = sanitize_text_field($_POST['calculator']);
+
+        switch ($calculator) {
+            case 'guinea_world':
+                $country = sanitize_text_field($_POST['country']);
+                $city = sanitize_text_field($_POST['city']);
+                $delivery_mode = sanitize_text_field($_POST['delivery_mode']);
+                $parcel_type = sanitize_text_field($_POST['parcel_type']);
+                $quantity = intval($_POST['quantity']);
+
+                $result = Colis224_Pricing_Engine::calculate_guinea_world(
+                    $country,
+                    $delivery_mode,
+                    $parcel_type,
+                    $quantity,
+                    $city
+                );
+
+                if ($result['success']) {
+                    wp_send_json_success($result);
+                } else {
+                    wp_send_json_error($result);
+                }
+                break;
+
+            default:
+                wp_send_json_error(array('message' => 'Calculateur invalide'));
+        }
     }
 }
 
