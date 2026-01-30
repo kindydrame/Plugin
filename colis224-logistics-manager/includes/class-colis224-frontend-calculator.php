@@ -880,15 +880,17 @@ class Colis224_Frontend_Calculator {
                             <!-- Delivery Address -->
                             <div class="address-box">
                                 <h4>📍 ADRESSE DE LIVRAISON</h4>
+                                <!-- Image d'adresse correspondante au mode -->
+                                <div id="address-image" style="margin-bottom: 16px;"></div>
                                 <div class="address-content" id="address-display"></div>
                                 <button type="button" class="btn btn-copy-full" data-copy="address-display">
                                     📋 Copier l'adresse
                                 </button>
                             </div>
 
-                            <!-- Visual Instructions -->
+                            <!-- Visual Instructions - Shipping Mark -->
                             <div class="visual-instructions">
-                                <h4>📸 Instructions visuelles pour le fournisseur</h4>
+                                <h4>📸 Instructions de marquage des cartons</h4>
                                 <div id="visual-instructions-images"></div>
                             </div>
 
@@ -950,17 +952,45 @@ class Colis224_Frontend_Calculator {
      * AJAX: Submit request
      */
     public static function ajax_submit_request() {
-        check_ajax_referer('colis224_frontend_nonce', 'nonce');
+        // Vérification du nonce avec gestion d'erreur
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'colis224_frontend_nonce')) {
+            wp_send_json_error(array(
+                'message' => 'Erreur de sécurité. Veuillez rafraîchir la page et réessayer.'
+            ));
+            return;
+        }
 
         global $wpdb;
         $table = $wpdb->prefix . self::$table_name;
 
-        // Get form data
+        // Vérifier que la table existe
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table}'");
+        if (!$table_exists) {
+            // Créer la table si elle n'existe pas
+            self::create_table();
+            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table}'");
+            if (!$table_exists) {
+                wp_send_json_error(array(
+                    'message' => 'Erreur de configuration. Veuillez contacter le support.'
+                ));
+                return;
+            }
+        }
+
+        // Vérifier les champs obligatoires
+        if (empty($_POST['nom']) || empty($_POST['prenom']) || empty($_POST['telephone'])) {
+            wp_send_json_error(array(
+                'message' => 'Veuillez remplir tous les champs obligatoires (nom, prénom, téléphone).'
+            ));
+            return;
+        }
+
+        // Get form data with sanitization
         $data = array(
             'nom' => sanitize_text_field($_POST['nom']),
             'prenom' => sanitize_text_field($_POST['prenom']),
             'telephone' => sanitize_text_field($_POST['telephone']),
-            'type_service' => sanitize_text_field($_POST['type_service']),
+            'type_service' => isset($_POST['type_service']) ? sanitize_text_field($_POST['type_service']) : '',
             'origine' => isset($_POST['origine']) && $_POST['origine'] ? sanitize_text_field($_POST['origine']) : null,
             'mode_livraison' => isset($_POST['mode_livraison']) && $_POST['mode_livraison'] ? sanitize_text_field($_POST['mode_livraison']) : null,
             'destination' => isset($_POST['destination']) && $_POST['destination'] ? sanitize_text_field($_POST['destination']) : null,
@@ -973,7 +1003,7 @@ class Colis224_Frontend_Calculator {
             'site_achat' => isset($_POST['site_achat']) ? sanitize_text_field($_POST['site_achat']) : null,
             'agency' => isset($_POST['agency']) ? sanitize_text_field($_POST['agency']) : null,
             'ip_address' => self::get_client_ip(),
-            'user_agent' => sanitize_text_field($_SERVER['HTTP_USER_AGENT']),
+            'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field($_SERVER['HTTP_USER_AGENT']) : '',
         );
 
         // Detect country code and indicatif
@@ -990,8 +1020,11 @@ class Colis224_Frontend_Calculator {
                 'id' => $wpdb->insert_id
             ));
         } else {
+            // Log l'erreur pour debug
+            error_log('Colis224 Frontend Calculator - Insert error: ' . $wpdb->last_error);
+
             wp_send_json_error(array(
-                'message' => 'Erreur lors de l\'enregistrement'
+                'message' => 'Erreur lors de l\'enregistrement. Veuillez réessayer ou contacter le support.'
             ));
         }
     }

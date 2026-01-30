@@ -4,8 +4,8 @@ Tags: logistics, shipping, delivery, colis, international
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.20.11
-Version: 2.20.11
+Stable tag: 2.20.12
+Version: 2.20.12
 License: GPL-2.0+
 License URI: http://www.gnu.org/licenses/gpl-2.0.txt
 
@@ -25,6 +25,14 @@ Système complet de gestion logistique pour entreprise de livraison internationa
 6. Activez le plugin
 
 == Changelog ==
+
+= 2.20.12 =
+* 🐛 BUGFIX: Correction affichage images par mode (avion/bateau)
+* CORRIGÉ: Images d'adresse affichées séparément des instructions shipping mark
+* CORRIGÉ: Alertes admin n'affichent plus les colis déjà payés
+* AMÉLIORATION: Meilleure gestion erreurs AJAX avec messages spécifiques
+* AMÉLIORATION: Vérification existence table avant insertion
+* AJOUT: Élément #address-image pour image d'adresse par mode
 
 = 2.20.11 =
 * 🐛 BUGFIX: Correction affichage images sur page de calcul

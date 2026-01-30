@@ -259,6 +259,7 @@
         let shippingMark = '';
         let deliveryAddress = '';
         let visualImages = '';
+        let addressImage = ''; // Image d'adresse correspondante au mode
 
         if (AppState.origin === 'chine') {
             // PRICING INFO - Show rates before shipping mark
@@ -560,11 +561,14 @@ Adresse complète : 10楼1020室 (10ème étage, salle 1020)
 
    ⚠️ 未标注 "COLIS224" 的包裹将被拒收。`;
 
-                // Check if images are available
+                // Check if images are available - AVION
                 if (typeof colis224Frontend !== 'undefined' && colis224Frontend.images) {
-                    visualImages = `<img src="${colis224Frontend.images.air_plane}" alt="Adresse Avion Chine" style="max-width:100%; border-radius:8px; margin-bottom:16px;">
-<img src="${colis224Frontend.images.air_cargo_mark}" alt="Shipping Mark Avion" style="max-width:100%; border-radius:8px;">`;
+                    // Image d'adresse avion (affichée avec l'adresse)
+                    addressImage = `<img src="${colis224Frontend.images.air_plane}" alt="Adresse Avion Chine - Guangzhou" style="max-width:100%; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">`;
+                    // Image des instructions shipping mark avion
+                    visualImages = `<img src="${colis224Frontend.images.air_cargo_mark}" alt="Instructions Shipping Mark Avion" style="max-width:100%; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">`;
                 } else {
+                    addressImage = '';
                     visualImages = `<p style="color: #f59e0b; padding: 20px; background: #fef3c7; border-radius: 8px;">
 📸 <strong>Images des instructions à venir</strong><br>
 Les images d'exemple pour l'adresse et le shipping mark seront bientôt disponibles.
@@ -631,11 +635,14 @@ Ville : Foshan (佛山市)
 
    ⚠️ 未标注 "COLIS224" 的包裹将被拒收。`;
 
-                // Check if images are available
+                // Check if images are available - BATEAU
                 if (typeof colis224Frontend !== 'undefined' && colis224Frontend.images) {
-                    visualImages = `<img src="${colis224Frontend.images.sea_cargo}" alt="Adresse Bateau Chine" style="max-width:100%; border-radius:8px; margin-bottom:16px;">
-<img src="${colis224Frontend.images.sea_cargo_mark}" alt="Shipping Mark Bateau" style="max-width:100%; border-radius:8px;">`;
+                    // Image d'adresse bateau (affichée avec l'adresse)
+                    addressImage = `<img src="${colis224Frontend.images.sea_cargo}" alt="Adresse Bateau Chine - Foshan" style="max-width:100%; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">`;
+                    // Image des instructions shipping mark bateau
+                    visualImages = `<img src="${colis224Frontend.images.sea_cargo_mark}" alt="Instructions Shipping Mark Bateau" style="max-width:100%; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">`;
                 } else {
+                    addressImage = '';
                     visualImages = `<p style="color: #f59e0b; padding: 20px; background: #fef3c7; border-radius: 8px;">
 📸 <strong>Images des instructions à venir</strong><br>
 Les images d'exemple pour l'adresse et le shipping mark seront bientôt disponibles.
@@ -719,6 +726,9 @@ Téléphone : ${formattedPhone}`;
         $('#pricing-display').html(pricingInfo);
         $('#shipping-mark-display').text(shippingMark);
         $('#address-display').text(deliveryAddress);
+        // Afficher l'image d'adresse correspondante au mode (avion/bateau)
+        $('#address-image').html(addressImage);
+        // Afficher l'image des instructions shipping mark
         $('#visual-instructions-images').html(visualImages);
 
         // Initialize CBM calculator if bateau mode

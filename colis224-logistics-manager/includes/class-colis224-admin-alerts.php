@@ -53,6 +53,7 @@ class Colis224_Admin_Alerts {
         }
 
         // 2. Notification : Colis disponibles à Conakry non retirés (plus de 3 jours)
+        // CORRECTION v2.20.12: Exclure les colis déjà payés totalement
         $parcels_waiting_pickup = $wpdb->get_results(
             "SELECT p.*, c.name as client_name, c.phone as client_phone, c.email as client_email
             FROM {$table_parcels} p
@@ -61,6 +62,7 @@ class Colis224_Admin_Alerts {
             AND p.delivery_date IS NOT NULL
             AND DATEDIFF(CURDATE(), p.delivery_date) >= 3
             AND p.delivery_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            AND (p.payment_status IS NULL OR p.payment_status != 'paid')
             ORDER BY p.delivery_date ASC
             LIMIT 10"
         );
