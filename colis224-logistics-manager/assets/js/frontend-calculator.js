@@ -415,7 +415,8 @@
     <h4 style="margin: 0 0 16px; font-size: 20px; font-weight: 700;">💳 Paiement WeChat disponible</h4>
     <p style="margin: 0 0 16px; opacity: 0.9; font-size: 14px;">Pour payer vos frais de transport en Chine, scannez notre QR Code WeChat</p>
     <div style="background: white; padding: 16px; border-radius: 8px; display: inline-block;">
-        <img src="${colis224Frontend.wechat_qr}" alt="QR Code WeChat COLIS224" style="max-width: 250px; width: 100%; height: auto; border-radius: 8px;">
+        <img src="${colis224Frontend.wechat_qr || ''}" alt="QR Code WeChat COLIS224" style="max-width: 200px; width: 100%; height: auto; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <p style="display:none; color: #09b83e; padding: 10px; margin: 0;">📱 Contact WeChat: +8618719472926 (KINDY)</p>
     </div>
     <p style="margin: 16px 0 0; font-size: 13px; opacity: 0.85;">🇨🇳 Idéal pour les paiements en Chine</p>
 </div>`;
@@ -428,22 +429,22 @@
         <h5>🚢 Calculateur de tarif CBM</h5>
 
         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 16px 0;">
-            <p style="margin: 0 0 16px; font-weight: 600;">📦 Entrez les dimensions de votre colis :</p>
+            <p style="margin: 0 0 16px; font-weight: 600;">📦 Entrez les dimensions de votre colis (en centimètres) :</p>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px;">
                 <div>
-                    <label style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 500;">Longueur (m)</label>
-                    <input type="number" id="cbm-length" step="0.01" min="0" placeholder="Ex: 1.2"
+                    <label style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 500;">Longueur (cm)</label>
+                    <input type="number" id="cbm-length" step="1" min="0" placeholder="Ex: 50"
                            style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 15px;">
                 </div>
                 <div>
-                    <label style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 500;">Largeur (m)</label>
-                    <input type="number" id="cbm-width" step="0.01" min="0" placeholder="Ex: 0.8"
+                    <label style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 500;">Largeur (cm)</label>
+                    <input type="number" id="cbm-width" step="1" min="0" placeholder="Ex: 40"
                            style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 15px;">
                 </div>
                 <div>
-                    <label style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 500;">Hauteur (m)</label>
-                    <input type="number" id="cbm-height" step="0.01" min="0" placeholder="Ex: 0.6"
+                    <label style="display: block; margin-bottom: 4px; font-size: 14px; font-weight: 500;">Hauteur (cm)</label>
+                    <input type="number" id="cbm-height" step="1" min="0" placeholder="Ex: 60"
                            style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 15px;">
                 </div>
             </div>
@@ -464,7 +465,7 @@
         </div>
 
         <p style="margin: 12px 0 0; font-size: 13px; color: #64748b; font-style: italic;">
-            📐 CBM = Longueur (m) × Largeur (m) × Hauteur (m)<br>
+            📐 CBM = (Longueur × Largeur × Hauteur) ÷ 1 000 000 (cm³ → m³)<br>
             💰 Tarif : 4,700,000 GNF par CBM
         </p>
     </div>
@@ -481,7 +482,8 @@
     <h4 style="margin: 0 0 16px; font-size: 20px; font-weight: 700;">💳 Paiement WeChat disponible</h4>
     <p style="margin: 0 0 16px; opacity: 0.9; font-size: 14px;">Pour payer vos frais de transport en Chine, scannez notre QR Code WeChat</p>
     <div style="background: white; padding: 16px; border-radius: 8px; display: inline-block;">
-        <img src="${colis224Frontend.wechat_qr}" alt="QR Code WeChat COLIS224" style="max-width: 250px; width: 100%; height: auto; border-radius: 8px;">
+        <img src="${colis224Frontend.wechat_qr || ''}" alt="QR Code WeChat COLIS224" style="max-width: 200px; width: 100%; height: auto; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <p style="display:none; color: #09b83e; padding: 10px; margin: 0;">📱 Contact WeChat: +8618719472926 (KINDY)</p>
     </div>
     <p style="margin: 16px 0 0; font-size: 13px; opacity: 0.85;">🇨🇳 Idéal pour les paiements en Chine</p>
 </div>`;
@@ -562,17 +564,27 @@ Adresse complète : 10楼1020室 (10ème étage, salle 1020)
    ⚠️ 未标注 "COLIS224" 的包裹将被拒收。`;
 
                 // Check if images are available - AVION
-                if (typeof colis224Frontend !== 'undefined' && colis224Frontend.images) {
-                    // Image d'adresse avion (affichée avec l'adresse)
-                    addressImage = `<img src="${colis224Frontend.images.air_plane}" alt="Adresse Avion Chine - Guangzhou" style="max-width:100%; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">`;
-                    // Image des instructions shipping mark avion
-                    visualImages = `<img src="${colis224Frontend.images.air_cargo_mark}" alt="Instructions Shipping Mark Avion" style="max-width:100%; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">`;
+                // v2.20.14: Vérification améliorée avec fallback si image ne charge pas
+                if (typeof colis224Frontend !== 'undefined' && colis224Frontend.images && colis224Frontend.images.air_plane && colis224Frontend.images.air_cargo_mark) {
+                    // Image d'adresse avion (affichée avec l'adresse) avec onerror fallback
+                    addressImage = `<img src="${colis224Frontend.images.air_plane}" alt="Adresse Avion Chine - Guangzhou" style="max-width:100%; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <p style="display:none; color: #3b82f6; padding: 15px; background: #eff6ff; border-radius: 8px; text-align: center;">
+                        📍 <strong>Adresse Avion:</strong> COLIS224, 广东省广州市越秀区流花街环市西路202号美博运动城 10楼1020室, +8618719472926 KINDY
+                    </p>`;
+                    // Image des instructions shipping mark avion avec onerror fallback
+                    visualImages = `<img src="${colis224Frontend.images.air_cargo_mark}" alt="Instructions Shipping Mark Avion" style="max-width:100%; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <p style="display:none; color: #059669; padding: 15px; background: #ecfdf5; border-radius: 8px;">
+                        📦 <strong>Instructions Shipping Mark:</strong><br>
+                        Écrivez sur CHAQUE carton: COLIS224 + Nom client + Téléphone + Code PA + Mode AVION ✈️
+                    </p>`;
                 } else {
-                    addressImage = '';
-                    visualImages = `<p style="color: #f59e0b; padding: 20px; background: #fef3c7; border-radius: 8px;">
-📸 <strong>Images des instructions à venir</strong><br>
-Les images d'exemple pour l'adresse et le shipping mark seront bientôt disponibles.
-</p>`;
+                    addressImage = `<p style="color: #3b82f6; padding: 15px; background: #eff6ff; border-radius: 8px; text-align: center;">
+                        📍 <strong>Adresse Avion:</strong> COLIS224, 广东省广州市越秀区流花街环市西路202号美博运动城 10楼1020室, +8618719472926 KINDY
+                    </p>`;
+                    visualImages = `<p style="color: #059669; padding: 15px; background: #ecfdf5; border-radius: 8px;">
+                        📦 <strong>Instructions Shipping Mark:</strong><br>
+                        Écrivez sur CHAQUE carton: COLIS224 + Nom client + Téléphone + Code PA + Mode AVION ✈️
+                    </p>`;
                 }
             } else {
                 deliveryAddress = `📍 ADRESSE BATEAU (Foshan - 佛山)
@@ -636,17 +648,27 @@ Ville : Foshan (佛山市)
    ⚠️ 未标注 "COLIS224" 的包裹将被拒收。`;
 
                 // Check if images are available - BATEAU
-                if (typeof colis224Frontend !== 'undefined' && colis224Frontend.images) {
-                    // Image d'adresse bateau (affichée avec l'adresse)
-                    addressImage = `<img src="${colis224Frontend.images.sea_cargo}" alt="Adresse Bateau Chine - Foshan" style="max-width:100%; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">`;
-                    // Image des instructions shipping mark bateau
-                    visualImages = `<img src="${colis224Frontend.images.sea_cargo_mark}" alt="Instructions Shipping Mark Bateau" style="max-width:100%; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">`;
+                // v2.20.14: Vérification améliorée avec fallback si image ne charge pas
+                if (typeof colis224Frontend !== 'undefined' && colis224Frontend.images && colis224Frontend.images.sea_cargo && colis224Frontend.images.sea_cargo_mark) {
+                    // Image d'adresse bateau (affichée avec l'adresse) avec onerror fallback
+                    addressImage = `<img src="${colis224Frontend.images.sea_cargo}" alt="Adresse Bateau Chine - Foshan" style="max-width:100%; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <p style="display:none; color: #3b82f6; padding: 15px; background: #eff6ff; border-radius: 8px; text-align: center;">
+                        📍 <strong>Adresse Bateau:</strong> COLIS224, 佛山市南海区里水镇上沙路29号, +8618719472926 KINDY
+                    </p>`;
+                    // Image des instructions shipping mark bateau avec onerror fallback
+                    visualImages = `<img src="${colis224Frontend.images.sea_cargo_mark}" alt="Instructions Shipping Mark Bateau" style="max-width:100%; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <p style="display:none; color: #059669; padding: 15px; background: #ecfdf5; border-radius: 8px;">
+                        📦 <strong>Instructions Shipping Mark:</strong><br>
+                        Écrivez sur CHAQUE carton: COLIS224 + Nom client + Téléphone + Code PA + Mode BATEAU 🚢
+                    </p>`;
                 } else {
-                    addressImage = '';
-                    visualImages = `<p style="color: #f59e0b; padding: 20px; background: #fef3c7; border-radius: 8px;">
-📸 <strong>Images des instructions à venir</strong><br>
-Les images d'exemple pour l'adresse et le shipping mark seront bientôt disponibles.
-</p>`;
+                    addressImage = `<p style="color: #3b82f6; padding: 15px; background: #eff6ff; border-radius: 8px; text-align: center;">
+                        📍 <strong>Adresse Bateau:</strong> COLIS224, 佛山市南海区里水镇上沙路29号, +8618719472926 KINDY
+                    </p>`;
+                    visualImages = `<p style="color: #059669; padding: 15px; background: #ecfdf5; border-radius: 8px;">
+                        📦 <strong>Instructions Shipping Mark:</strong><br>
+                        Écrivez sur CHAQUE carton: COLIS224 + Nom client + Téléphone + Code PA + Mode BATEAU 🚢
+                    </p>`;
                 }
             }
         } else if (AppState.destination === 'france-paris') {
@@ -775,17 +797,19 @@ Téléphone : ${formattedPhone}`;
      */
     function initCBMCalculator() {
         $(document).on('click', '#btn-calculate-cbm', function() {
-            const length = parseFloat($('#cbm-length').val()) || 0;
-            const width = parseFloat($('#cbm-width').val()) || 0;
-            const height = parseFloat($('#cbm-height').val()) || 0;
+            // v2.20.14: Les valeurs sont maintenant en centimètres
+            const lengthCm = parseFloat($('#cbm-length').val()) || 0;
+            const widthCm = parseFloat($('#cbm-width').val()) || 0;
+            const heightCm = parseFloat($('#cbm-height').val()) || 0;
 
-            if (length <= 0 || width <= 0 || height <= 0) {
+            if (lengthCm <= 0 || widthCm <= 0 || heightCm <= 0) {
                 alert('Veuillez entrer toutes les dimensions (valeurs positives)');
                 return;
             }
 
-            // Calculate CBM
-            const cbm = length * width * height;
+            // v2.20.14: Convertir cm³ en m³ (diviser par 1 000 000)
+            // Formule: CBM = (L × W × H) / 1000000
+            const cbm = (lengthCm * widthCm * heightCm) / 1000000;
             const pricePerCBM = 4700000; // 4,700,000 GNF
             const totalPrice = cbm * pricePerCBM;
 

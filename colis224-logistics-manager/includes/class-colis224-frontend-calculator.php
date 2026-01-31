@@ -727,7 +727,7 @@ class Colis224_Frontend_Calculator {
                                     <div class="qr-code-container" style="text-align: center; padding: 20px; background: #fff; border-radius: 8px; border: 2px solid #f59e0b;">
                                         <img src="https://colis224.com/wp-content/uploads/2026/01/compte-marchand-orange-money-colis224.jpg"
                                              alt="QR Code Orange Money COLIS224"
-                                             style="max-width: 300px; width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                             style="max-width: 180px; width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                                         <p class="merchant-name" style="margin: 12px 0 0; font-weight: 600; color: #f59e0b;">Marchand : COLIS224</p>
                                     </div>
                                 </div>
@@ -800,7 +800,7 @@ class Colis224_Frontend_Calculator {
                                     <div class="qr-code-container" style="text-align: center; padding: 20px; background: #fff; border-radius: 8px; border: 2px solid #f59e0b;">
                                         <img src="https://colis224.com/wp-content/uploads/2026/01/compte-marchand-orange-money-colis224.jpg"
                                              alt="QR Code Orange Money COLIS224"
-                                             style="max-width: 300px; width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                             style="max-width: 180px; width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                                         <p class="merchant-name" style="margin: 12px 0 0; font-weight: 600; color: #f59e0b;">Marchand : COLIS224</p>
                                     </div>
                                 </div>
