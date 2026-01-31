@@ -1053,6 +1053,21 @@ class Colis224_Frontend_Calculator {
         $data['pays'] = $phone_info['country_code'];
         $data['indicatif'] = $phone_info['indicatif'];
 
+        // v2.20.14: S'assurer que type_service n'est pas vide
+        if (empty($data['type_service'])) {
+            $data['type_service'] = 'cas2'; // Default to cas2 (envoi personnel)
+        }
+
+        // Nettoyer les valeurs NULL pour éviter les erreurs d'insertion
+        foreach ($data as $key => $value) {
+            if ($value === '') {
+                $data[$key] = null;
+            }
+        }
+
+        // Debug: Log les données avant insertion
+        error_log('Colis224 Frontend Calculator - Data to insert: ' . print_r($data, true));
+
         // Insert into database
         $inserted = $wpdb->insert($table, $data);
 
@@ -1063,10 +1078,13 @@ class Colis224_Frontend_Calculator {
             ));
         } else {
             // Log l'erreur pour debug
-            error_log('Colis224 Frontend Calculator - Insert error: ' . $wpdb->last_error);
+            $db_error = $wpdb->last_error;
+            error_log('Colis224 Frontend Calculator - Insert error: ' . $db_error);
+            error_log('Colis224 Frontend Calculator - Last query: ' . $wpdb->last_query);
 
             wp_send_json_error(array(
-                'message' => 'Erreur lors de l\'enregistrement. Veuillez réessayer ou contacter le support.'
+                'message' => 'Erreur lors de l\'enregistrement: ' . ($db_error ? $db_error : 'Erreur inconnue. Veuillez réessayer.'),
+                'debug' => WP_DEBUG ? $db_error : null
             ));
         }
     }

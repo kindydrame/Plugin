@@ -1245,18 +1245,47 @@ Téléphone : ${formattedPhone}`;
             url: colis224Frontend.ajax_url,
             type: 'POST',
             data: ajaxData,
+            dataType: 'json',
             success: function(response) {
                 console.log('AJAX response:', response);
-                if (response.success) {
+                if (response && response.success) {
                     showSuccessMessage();
                 } else {
-                    alert('Erreur: ' + (response.data && response.data.message ? response.data.message : 'Une erreur est survenue'));
+                    // v2.20.14: Meilleure gestion des erreurs
+                    let errorMsg = 'Une erreur est survenue';
+                    if (response && response.data && response.data.message) {
+                        errorMsg = response.data.message;
+                    } else if (response && response.data) {
+                        errorMsg = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+                    }
+                    console.error('Submit error:', errorMsg);
+                    alert('Erreur: ' + errorMsg);
                     $submitBtn.prop('disabled', false).removeClass('loading').html(originalText);
                 }
             },
             error: function(xhr, status, error) {
-                console.error('AJAX error:', xhr, status, error);
-                alert('Erreur de connexion. Veuillez réessayer. Détails: ' + error);
+                console.error('AJAX error:', xhr.status, status, error);
+                console.error('Response text:', xhr.responseText);
+
+                // v2.20.14: Essayer de parser la réponse JSON si possible
+                let errorMsg = 'Erreur de connexion';
+                try {
+                    const jsonResponse = JSON.parse(xhr.responseText);
+                    if (jsonResponse && jsonResponse.data && jsonResponse.data.message) {
+                        errorMsg = jsonResponse.data.message;
+                    }
+                } catch(e) {
+                    // Si la réponse n'est pas du JSON, afficher l'erreur HTTP
+                    if (xhr.status === 0) {
+                        errorMsg = 'Impossible de contacter le serveur. Vérifiez votre connexion internet.';
+                    } else if (xhr.status === 500) {
+                        errorMsg = 'Erreur serveur (500). Veuillez réessayer ou contacter le support.';
+                    } else {
+                        errorMsg = 'Erreur ' + xhr.status + ': ' + (error || status);
+                    }
+                }
+
+                alert('Erreur: ' + errorMsg);
                 $submitBtn.prop('disabled', false).removeClass('loading').html(originalText);
             }
         });
