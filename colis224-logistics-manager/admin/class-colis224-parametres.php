@@ -42,6 +42,9 @@ class Colis224_Settings {
                 <a href="?page=colis224-settings&tab=categories" class="nav-tab <?php echo $tab === 'categories' ? 'nav-tab-active' : ''; ?>">
                     <span class="dashicons dashicons-category"></span> Catégories
                 </a>
+                <a href="?page=colis224-settings&tab=calculator" class="nav-tab <?php echo $tab === 'calculator' ? 'nav-tab-active' : ''; ?>">
+                    <span class="dashicons dashicons-calculator"></span> Calculateur
+                </a>
             </nav>
 
             <?php
@@ -55,6 +58,8 @@ class Colis224_Settings {
                 self::display_notification_settings();
             } elseif ($tab === 'currencies') {
                 self::display_currency_settings();
+            } elseif ($tab === 'calculator') {
+                self::display_calculator_settings();
             } else {
                 self::display_category_settings();
             }
@@ -633,6 +638,111 @@ class Colis224_Settings {
         <?php
     }
 
+    /**
+     * Afficher les paramètres du calculateur frontend
+     * v2.20.14: Nouveau - Configuration du tarif CBM et des images
+     */
+    private static function display_calculator_settings() {
+        ?>
+        <div class="colis224-card" style="margin-top: 20px;">
+            <h3><span class="dashicons dashicons-calculator"></span> Paramètres du Calculateur Frontend</h3>
+
+            <form method="post">
+                <?php wp_nonce_field('colis224_settings_action', 'colis224_settings_nonce'); ?>
+                <input type="hidden" name="action" value="save_settings">
+                <input type="hidden" name="settings_tab" value="calculator">
+
+                <h4 style="margin-top: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">
+                    <span class="dashicons dashicons-money-alt"></span> Tarification CBM (Transport Maritime)
+                </h4>
+
+                <table class="form-table">
+                    <tr>
+                        <th><label for="cbm_price_gnf">Prix par CBM (GNF)</label></th>
+                        <td>
+                            <input type="number" id="cbm_price_gnf" name="cbm_price_gnf" class="regular-text"
+                                   value="<?php echo esc_attr(get_option('colis224_cbm_price_gnf', '4700000')); ?>"
+                                   min="0" step="1000">
+                            <p class="description">Tarif en Francs Guinéens par mètre cube (CBM). Valeur par défaut: 4 700 000 GNF</p>
+                        </td>
+                    </tr>
+                </table>
+
+                <h4 style="margin-top: 30px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">
+                    <span class="dashicons dashicons-format-image"></span> Images du Calculateur
+                </h4>
+                <p class="description" style="margin-bottom: 15px;">
+                    Configurez les URLs des images affichées dans le calculateur. Laissez vide pour utiliser les instructions textuelles.
+                    <br><strong>Astuce:</strong> Uploadez les images dans votre médiathèque WordPress et copiez l'URL ici.
+                </p>
+
+                <table class="form-table">
+                    <tr>
+                        <th><label for="image_wechat_qr">QR Code WeChat</label></th>
+                        <td>
+                            <input type="url" id="image_wechat_qr" name="image_wechat_qr" class="large-text"
+                                   value="<?php echo esc_attr(get_option('colis224_image_wechat_qr', '')); ?>"
+                                   placeholder="https://votre-site.com/wp-content/uploads/wechat-qr.jpg">
+                            <p class="description">Image du QR Code pour paiement WeChat</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="image_orange_money_qr">QR Code Orange Money</label></th>
+                        <td>
+                            <input type="url" id="image_orange_money_qr" name="image_orange_money_qr" class="large-text"
+                                   value="<?php echo esc_attr(get_option('colis224_image_orange_money_qr', '')); ?>"
+                                   placeholder="https://votre-site.com/wp-content/uploads/orange-money-qr.jpg">
+                            <p class="description">Image du QR Code pour paiement Orange Money marchand</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="image_air_plane">Adresse Avion (Guangzhou)</label></th>
+                        <td>
+                            <input type="url" id="image_air_plane" name="image_air_plane" class="large-text"
+                                   value="<?php echo esc_attr(get_option('colis224_image_air_plane', '')); ?>"
+                                   placeholder="https://votre-site.com/wp-content/uploads/adresse-avion.jpg">
+                            <p class="description">Image montrant l'adresse de l'entrepôt avion en Chine</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="image_sea_cargo">Adresse Bateau (Foshan)</label></th>
+                        <td>
+                            <input type="url" id="image_sea_cargo" name="image_sea_cargo" class="large-text"
+                                   value="<?php echo esc_attr(get_option('colis224_image_sea_cargo', '')); ?>"
+                                   placeholder="https://votre-site.com/wp-content/uploads/adresse-bateau.jpg">
+                            <p class="description">Image montrant l'adresse de l'entrepôt bateau en Chine</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="image_air_cargo_mark">Instructions Shipping Mark Avion</label></th>
+                        <td>
+                            <input type="url" id="image_air_cargo_mark" name="image_air_cargo_mark" class="large-text"
+                                   value="<?php echo esc_attr(get_option('colis224_image_air_cargo_mark', '')); ?>"
+                                   placeholder="https://votre-site.com/wp-content/uploads/process-avion.jpg">
+                            <p class="description">Image expliquant comment marquer les cartons (mode avion)</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="image_sea_cargo_mark">Instructions Shipping Mark Bateau</label></th>
+                        <td>
+                            <input type="url" id="image_sea_cargo_mark" name="image_sea_cargo_mark" class="large-text"
+                                   value="<?php echo esc_attr(get_option('colis224_image_sea_cargo_mark', '')); ?>"
+                                   placeholder="https://votre-site.com/wp-content/uploads/process-bateau.jpg">
+                            <p class="description">Image expliquant comment marquer les cartons (mode bateau)</p>
+                        </td>
+                    </tr>
+                </table>
+
+                <p class="submit">
+                    <button type="submit" class="button button-primary">
+                        <span class="dashicons dashicons-yes"></span> Enregistrer les paramètres du calculateur
+                    </button>
+                </p>
+            </form>
+        </div>
+        <?php
+    }
+
     private static function save_settings() {
         if (!isset($_POST['colis224_settings_nonce']) || !wp_verify_nonce($_POST['colis224_settings_nonce'], 'colis224_settings_action')) {
             wp_die('Erreur de sécurité');
@@ -666,8 +776,24 @@ class Colis224_Settings {
             'moov_money_environment',
 
             // Configuration PayPal
-            'paypal_enabled', 'paypal_client_id', 'paypal_client_secret', 'paypal_mode'
+            'paypal_enabled', 'paypal_client_id', 'paypal_client_secret', 'paypal_mode',
+
+            // v2.20.14: Paramètres du calculateur
+            'cbm_price_gnf'
         );
+
+        // v2.20.14: Paramètres d'images (URLs) - traitement séparé
+        $image_settings = array(
+            'image_wechat_qr', 'image_orange_money_qr', 'image_air_plane',
+            'image_sea_cargo', 'image_air_cargo_mark', 'image_sea_cargo_mark'
+        );
+
+        foreach ($image_settings as $image_setting) {
+            if (isset($_POST[$image_setting])) {
+                $url = esc_url_raw($_POST[$image_setting]);
+                update_option('colis224_' . $image_setting, $url);
+            }
+        }
 
         foreach ($settings as $setting) {
             if (isset($_POST[$setting])) {

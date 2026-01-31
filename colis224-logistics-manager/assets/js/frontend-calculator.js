@@ -413,10 +413,13 @@
 
 <div class="wechat-payment-box" style="background: linear-gradient(135deg, #09b83e 0%, #07a33a 100%); border-radius: 12px; padding: 24px; margin-top: 20px; color: white; text-align: center;">
     <h4 style="margin: 0 0 16px; font-size: 20px; font-weight: 700;">💳 Paiement WeChat disponible</h4>
-    <p style="margin: 0 0 16px; opacity: 0.9; font-size: 14px;">Pour payer vos frais de transport en Chine, scannez notre QR Code WeChat</p>
+    <p style="margin: 0 0 16px; opacity: 0.9; font-size: 14px;">Pour payer vos frais de transport en Chine, ${colis224Frontend.wechat_qr ? 'scannez notre QR Code WeChat' : 'contactez-nous sur WeChat'}</p>
     <div style="background: white; padding: 16px; border-radius: 8px; display: inline-block;">
-        <img src="${colis224Frontend.wechat_qr || ''}" alt="QR Code WeChat COLIS224" style="max-width: 200px; width: 100%; height: auto; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-        <p style="display:none; color: #09b83e; padding: 10px; margin: 0;">📱 Contact WeChat: +8618719472926 (KINDY)</p>
+        ${colis224Frontend.wechat_qr
+            ? `<img src="${colis224Frontend.wechat_qr}" alt="QR Code WeChat COLIS224" style="max-width: 200px; width: 100%; height: auto; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+               <p style="display:none; color: #09b83e; padding: 10px; margin: 0;">📱 Contact WeChat: +8618719472926 (KINDY)</p>`
+            : `<p style="color: #09b83e; padding: 10px; margin: 0; font-size: 16px; font-weight: 600;">📱 WeChat: +8618719472926<br><span style="font-size: 14px; font-weight: normal;">Nom: KINDY</span></p>`
+        }
     </div>
     <p style="margin: 16px 0 0; font-size: 13px; opacity: 0.85;">🇨🇳 Idéal pour les paiements en Chine</p>
 </div>`;
@@ -466,7 +469,7 @@
 
         <p style="margin: 12px 0 0; font-size: 13px; color: #64748b; font-style: italic;">
             📐 CBM = (Longueur × Largeur × Hauteur) ÷ 1 000 000 (cm³ → m³)<br>
-            💰 Tarif : 4,700,000 GNF par CBM
+            💰 Tarif : <span id="cbm-rate-display">${(typeof colis224Frontend !== 'undefined' && colis224Frontend.cbm_price) ? colis224Frontend.cbm_price.toLocaleString('fr-GN') : '4 700 000'}</span> GNF par CBM
         </p>
     </div>
 
@@ -480,10 +483,13 @@
 
 <div class="wechat-payment-box" style="background: linear-gradient(135deg, #09b83e 0%, #07a33a 100%); border-radius: 12px; padding: 24px; margin-top: 20px; color: white; text-align: center;">
     <h4 style="margin: 0 0 16px; font-size: 20px; font-weight: 700;">💳 Paiement WeChat disponible</h4>
-    <p style="margin: 0 0 16px; opacity: 0.9; font-size: 14px;">Pour payer vos frais de transport en Chine, scannez notre QR Code WeChat</p>
+    <p style="margin: 0 0 16px; opacity: 0.9; font-size: 14px;">Pour payer vos frais de transport en Chine, ${colis224Frontend.wechat_qr ? 'scannez notre QR Code WeChat' : 'contactez-nous sur WeChat'}</p>
     <div style="background: white; padding: 16px; border-radius: 8px; display: inline-block;">
-        <img src="${colis224Frontend.wechat_qr || ''}" alt="QR Code WeChat COLIS224" style="max-width: 200px; width: 100%; height: auto; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-        <p style="display:none; color: #09b83e; padding: 10px; margin: 0;">📱 Contact WeChat: +8618719472926 (KINDY)</p>
+        ${colis224Frontend.wechat_qr
+            ? `<img src="${colis224Frontend.wechat_qr}" alt="QR Code WeChat COLIS224" style="max-width: 200px; width: 100%; height: auto; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+               <p style="display:none; color: #09b83e; padding: 10px; margin: 0;">📱 Contact WeChat: +8618719472926 (KINDY)</p>`
+            : `<p style="color: #09b83e; padding: 10px; margin: 0; font-size: 16px; font-weight: 600;">📱 WeChat: +8618719472926<br><span style="font-size: 14px; font-weight: normal;">Nom: KINDY</span></p>`
+        }
     </div>
     <p style="margin: 16px 0 0; font-size: 13px; opacity: 0.85;">🇨🇳 Idéal pour les paiements en Chine</p>
 </div>`;
@@ -810,7 +816,10 @@ Téléphone : ${formattedPhone}`;
             // v2.20.14: Convertir cm³ en m³ (diviser par 1 000 000)
             // Formule: CBM = (L × W × H) / 1000000
             const cbm = (lengthCm * widthCm * heightCm) / 1000000;
-            const pricePerCBM = 4700000; // 4,700,000 GNF
+            // v2.20.14: Utiliser le tarif configurable depuis l'admin WordPress
+            const pricePerCBM = (typeof colis224Frontend !== 'undefined' && colis224Frontend.cbm_price)
+                ? colis224Frontend.cbm_price
+                : 4700000; // Fallback: 4,700,000 GNF
             const totalPrice = cbm * pricePerCBM;
 
             // Display result

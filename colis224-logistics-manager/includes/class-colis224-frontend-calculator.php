@@ -946,8 +946,19 @@ class Colis224_Frontend_Calculator {
         </div>
 
         <?php
-        // v2.20.13: Injection directe des données JavaScript pour garantir leur disponibilité
-        $calculator_images = self::get_calculator_images();
+        // v2.20.14: Récupérer les paramètres configurables depuis les options WordPress
+        $cbm_price = intval(get_option('colis224_cbm_price_gnf', 4700000));
+
+        // v2.20.14: Récupérer les URLs d'images depuis les options (vides si non configurées)
+        $configured_images = array(
+            'wechat_qr' => get_option('colis224_image_wechat_qr', ''),
+            'orange_money_qr' => get_option('colis224_image_orange_money_qr', ''),
+            'air_plane' => get_option('colis224_image_air_plane', ''),
+            'sea_cargo' => get_option('colis224_image_sea_cargo', ''),
+            'air_cargo_mark' => get_option('colis224_image_air_cargo_mark', ''),
+            'sea_cargo_mark' => get_option('colis224_image_sea_cargo_mark', ''),
+        );
+
         $frontend_data = array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('colis224_frontend_nonce'),
@@ -962,29 +973,25 @@ class Colis224_Frontend_Calculator {
             ),
             'orange_money_code' => '#144*6*649048*100000*code secret#OK',
             'orange_money_merchant' => 'COLIS224',
-            'orange_money_qr' => $calculator_images['orange_money_qr'],
-            'wechat_qr' => $calculator_images['wechat_qr'],
-            'images' => $calculator_images['images'],
+            // v2.20.14: Tarif CBM configurable
+            'cbm_price' => $cbm_price,
+            // v2.20.14: Images configurées (vides si non définies)
+            'wechat_qr' => $configured_images['wechat_qr'],
+            'orange_money_qr' => $configured_images['orange_money_qr'],
+            'images' => array(
+                'air_plane' => $configured_images['air_plane'],
+                'sea_cargo' => $configured_images['sea_cargo'],
+                'air_cargo_mark' => $configured_images['air_cargo_mark'],
+                'sea_cargo_mark' => $configured_images['sea_cargo_mark'],
+            ),
             'plugin_images_url' => COLIS224_PLUGIN_URL . 'assets/images/',
         );
         ?>
         <script type="text/javascript">
-        // v2.20.13: Initialisation garantie de colis224Frontend
-        if (typeof colis224Frontend === 'undefined') {
-            var colis224Frontend = <?php echo json_encode($frontend_data); ?>;
-        } else {
-            // Merge avec les données existantes si wp_localize_script a fonctionné
-            if (!colis224Frontend.images || Object.keys(colis224Frontend.images).length === 0) {
-                colis224Frontend.images = <?php echo json_encode($calculator_images['images']); ?>;
-            }
-            if (!colis224Frontend.wechat_qr) {
-                colis224Frontend.wechat_qr = <?php echo json_encode($calculator_images['wechat_qr']); ?>;
-            }
-            if (!colis224Frontend.orange_money_qr) {
-                colis224Frontend.orange_money_qr = <?php echo json_encode($calculator_images['orange_money_qr']); ?>;
-            }
-        }
-        console.log('colis224Frontend initialisé:', colis224Frontend);
+        // v2.20.14: Initialisation de colis224Frontend avec paramètres configurables
+        var colis224Frontend = <?php echo json_encode($frontend_data); ?>;
+        console.log('colis224Frontend initialisé (v2.20.14):', colis224Frontend);
+        console.log('Tarif CBM:', colis224Frontend.cbm_price, 'GNF/m³');
         </script>
         <?php
         return ob_get_clean();
