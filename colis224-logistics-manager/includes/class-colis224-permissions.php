@@ -9,8 +9,14 @@ if (!defined('ABSPATH')) {
 
 class Colis224_Permissions {
 
+    /**
+     * Flag pour éviter les exécutions multiples
+     */
+    private static $roles_initialized = false;
+
     public function __construct() {
-        add_action('init', array($this, 'register_roles_and_capabilities'));
+        // Utiliser un hook unique pour éviter les conflits
+        add_action('init', array($this, 'register_roles_and_capabilities'), 5);
         add_action('admin_init', array($this, 'check_user_permissions'));
     }
 
@@ -18,6 +24,12 @@ class Colis224_Permissions {
      * Enregistrer les rôles personnalisés
      */
     public function register_roles_and_capabilities() {
+        // Éviter les exécutions multiples dans la même requête
+        if (self::$roles_initialized) {
+            return;
+        }
+        self::$roles_initialized = true;
+
         // Rôle: Gestionnaire Colis224
         add_role('colis224_manager', 'Gestionnaire Colis224', array(
             'read' => true,
@@ -26,48 +38,13 @@ class Colis224_Permissions {
             'colis224_manage_accounting' => true,
         ));
 
-        // Rôle: Agent Colis224
+        // Rôle: Agent Colis224 - Créer seulement si n'existe pas
         add_role('colis224_agent', 'Agent Colis224', array(
             'read' => true,
             'colis224_create_parcel' => true,
             'colis224_view_parcels' => true,
             'colis224_manage_clients' => true,
         ));
-        
-        // v2.20.12: Forcer la mise à jour des capabilities des agents
-        // Supprimer et recréer le rôle si la version a changé
-        $current_role_version = get_option('colis224_role_version', '0');
-        $target_role_version = '2.20.12';
-
-        if (version_compare($current_role_version, $target_role_version, '<')) {
-            // Supprimer le rôle agent existant pour le recréer avec les bonnes capabilities
-            remove_role('colis224_agent');
-
-            // Recréer le rôle avec toutes les capabilities
-            add_role('colis224_agent', 'Agent Colis224', array(
-                'read' => true,
-                'colis224_create_parcel' => true,
-                'colis224_view_parcels' => true,
-                'colis224_manage_clients' => true,
-            ));
-
-            update_option('colis224_role_version', $target_role_version);
-        }
-
-        // S'assurer que le rôle agent existe et a les bonnes capabilities
-        $agent_role = get_role('colis224_agent');
-        if ($agent_role) {
-            // Vérifier et ajouter les capabilities si nécessaire
-            if (!$agent_role->has_cap('colis224_view_parcels')) {
-                $agent_role->add_cap('colis224_view_parcels');
-            }
-            if (!$agent_role->has_cap('colis224_create_parcel')) {
-                $agent_role->add_cap('colis224_create_parcel');
-            }
-            if (!$agent_role->has_cap('colis224_manage_clients')) {
-                $agent_role->add_cap('colis224_manage_clients');
-            }
-        }
 
         // Rôle: Livreur Colis224
         add_role('colis224_driver', 'Livreur Colis224', array(
@@ -83,6 +60,26 @@ class Colis224_Permissions {
             'colis224_manage_accounting' => true,
             'colis224_view_all_transactions' => true,
         ));
+
+        // v2.20.13: Toujours s'assurer que le rôle agent a les bonnes capabilities
+        // Sans supprimer/recréer le rôle (ce qui causait les bugs intermittents)
+        $agent_role = get_role('colis224_agent');
+        if ($agent_role) {
+            // Liste des capabilities requises pour les agents
+            $required_caps = array(
+                'read' => true,
+                'colis224_create_parcel' => true,
+                'colis224_view_parcels' => true,
+                'colis224_manage_clients' => true,
+            );
+
+            // Ajouter chaque capability manquante
+            foreach ($required_caps as $cap => $grant) {
+                if (!$agent_role->has_cap($cap)) {
+                    $agent_role->add_cap($cap, $grant);
+                }
+            }
+        }
 
         // Ajouter les capabilities aux administrateurs
         $admin = get_role('administrator');
