@@ -988,10 +988,24 @@ class Colis224_Frontend_Calculator {
         );
         ?>
         <script type="text/javascript">
-        // v2.20.14: Initialisation de colis224Frontend avec paramètres configurables
-        var colis224Frontend = <?php echo json_encode($frontend_data); ?>;
-        console.log('colis224Frontend initialisé (v2.20.14):', colis224Frontend);
-        console.log('Tarif CBM:', colis224Frontend.cbm_price, 'GNF/m³');
+        // v2.20.14: Fusion des données avec colis224Frontend existant (wp_localize_script)
+        (function() {
+            var newData = <?php echo json_encode($frontend_data); ?>;
+            if (typeof colis224Frontend !== 'undefined') {
+                // Fusionner avec les données existantes (ajax_url, nonce, etc.)
+                for (var key in newData) {
+                    if (newData.hasOwnProperty(key)) {
+                        colis224Frontend[key] = newData[key];
+                    }
+                }
+            } else {
+                // Créer l'objet s'il n'existe pas
+                window.colis224Frontend = newData;
+            }
+            console.log('colis224Frontend initialisé (v2.20.14):', colis224Frontend);
+            console.log('Tarif CBM:', colis224Frontend.cbm_price, 'GNF/m³');
+            console.log('Ajax URL:', colis224Frontend.ajax_url);
+        })();
         </script>
         <?php
         return ob_get_clean();
